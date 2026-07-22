@@ -121,3 +121,74 @@ def check_bash(command: str) -> str | None:
             return f"Destructive git blocked: {desc}"
 
     return None
+
+
+def check_bash_with_context(
+    command: str,
+    asset_ledger=None,
+    error_count: int = 0,
+) -> dict:
+    """Context-aware Bash safety check with tri-state output.
+
+    Args:
+        command: The bash command to check
+        asset_ledger: Optional AssetLedger for asset-aware decisions
+        error_count: Agent's recent error count (for safe mode)
+
+    Returns:
+        {"decision": "ALLOW"|"CONFIRM"|"BLOCK", "reason": str}
+    """
+    # Level 1: Pattern matching
+    pattern_result = check_bash(command)
+    if pattern_result:
+        return {"decision": "BLOCK", "reason": pattern_result}
+
+    # Level 2: Asset-aware check for destructive operations
+    if asset_ledger is not None:
+        asset_result = _check_asset_safety(command, asset_ledger)
+        if asset_result:
+            return asset_result
+
+    # Level 3: Post-error safe mode
+    if error_count >= 2 and _is_destructive(command):
+        return {
+            "decision": "CONFIRM",
+            "reason": "safe_mode: agent has {} recent errors".format(error_count),
+        }
+
+    return {"decision": "ALLOW", "reason": "safe"}
+
+
+def _is_destructive(command: str) -> bool:
+    """Check if a command is potentially destructive (rm, mv, git destructive, etc.)."""
+    return bool(re.search(r"\b(?:rm|mv|git\s+(?:reset|clean|push|checkout|restore))\b", command))
+
+
+def _check_asset_safety(command: str, ledger) -> Optional[dict]:
+    """Check command against the asset ledger for context-aware safety."""
+    import re as _re
+
+    # Extract paths from rm/mv commands
+    rm_match = _re.search(r"\brm\s+(?:-[a-zA-Z]*[rf][a-zA-Z]*\s+)?(\S+)", command)
+    mv_match = _re.search(r"\bmv\s+\S+\s+(\S+)", command)
+
+    target_path = None
+    if rm_match:
+        target_path = rm_match.group(1)
+    elif mv_match:
+        target_path = mv_match.group(1)
+
+    if target_path is None:
+        return None
+
+    # Check if the target is a tracked asset
+    if not ledger.is_tracked(target_path):
+        return None
+
+    decision = ledger.is_safe_to_delete(target_path)
+    if "BLOCK" in decision:
+        return {"decision": "BLOCK", "reason": "asset_ledger: {}".format(decision)}
+    elif "CONFIRM" in decision:
+        return {"decision": "CONFIRM", "reason": "asset_ledger: {}".format(decision)}
+
+    return None
