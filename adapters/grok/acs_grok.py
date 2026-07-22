@@ -67,6 +67,12 @@ def handle_bash(data: dict) -> None:
         audit.log("PreToolUse", "Bash", data.get("session_id", ""), "confirm", result["reason"])
         _deny(f"[CONFIRM REQUIRED] {result['reason']}")
 
+    # Auto-track: detect mv and record the move
+    import re
+    mv_match = re.search(r"\bmv\s+(\S+)\s+(\S+)", cmd)
+    if mv_match:
+        tracker.on_move(mv_match.group(1), mv_match.group(2))
+
     if should_lock(load_violations(VIOLATIONS_FILE)):
         ws = window_score(load_violations(VIOLATIONS_FILE))
         _deny(f"System locked (violation window={ws})")
