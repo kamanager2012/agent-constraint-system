@@ -48,10 +48,12 @@ INIT["cursor"]="python3 ~/.cursor/hooks/acs_cursor.py init"
 detected() { [[ -d "${DIR[$1]}" ]]; }
 
 install_core() {
+install_core() {
     mkdir -p "$CORE_DST"
-    local n=0
-    for f in "$CORE_SRC"/*.py; do cp "$f" "$CORE_DST/"; ((n++)); done
-    echo -e "  ${G}OK${N} Core �� ${n} files installed to $CORE_DST"
+    cp "$CORE_SRC"/*.py "$CORE_DST/" 2>/dev/null
+    local n=$(ls "$CORE_DST"/*.py 2>/dev/null | wc -l)
+    echo "  OK: Core -- ${n} files installed to $CORE_DST"
+}
 }
 
 install_claude() {
