@@ -30,7 +30,7 @@ from violations import (
     load_violations, integrity_store, integrity_verify,
 )
 from audit import AuditLogger
-from asset_ledger import AssetLedger
+from asset_ledger import AssetLedger, AssetTracker
 from safe_mode import SafeMode
 
 # -- Agent-specific paths --
@@ -45,7 +45,8 @@ CRITICAL_FILES = [Path(__file__).resolve()]
 
 audit = AuditLogger(AUDIT_LOG)
 ledger = AssetLedger(str(RUNTIME_DIR / "asset_ledger.json"))
-safe_mode = SafeMode()
+tracker = AssetTracker(ledger)
+safe_mode = SafeMode(str(RUNTIME_DIR / "safe_mode.json"))
 
 
 # -- Helper --
