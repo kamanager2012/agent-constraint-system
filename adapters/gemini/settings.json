@@ -1,0 +1,30 @@
+{
+  "hooks": {
+    "BeforeTool": [
+      {
+        "matcher": "run_shell_command|execute_command|write_file|replace",
+        "hooks": [
+          {
+            "name": "gacs-guard",
+            "type": "command",
+            "command": "python3 $HOME/.gemini/hooks/gacs.py",
+            "timeout": 10000
+          }
+        ]
+      }
+    ],
+    "AfterTool": [
+      {
+        "matcher": "run_shell_command|execute_command|write_file|replace",
+        "hooks": [
+          {
+            "name": "gacs-audit",
+            "type": "command",
+            "command": "python3 $HOME/.gemini/hooks/gacs.py",
+            "timeout": 10000
+          }
+        ]
+      }
+    ]
+  }
+}

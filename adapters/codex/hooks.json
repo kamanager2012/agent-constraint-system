@@ -1,0 +1,67 @@
+{
+  "description": "CACS v1.0 — Codex Agent Constraint System",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 $HOME/.codex/hooks/acs_codex.py",
+            "timeout": 5,
+            "statusMessage": "CACS: Initializing"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 $HOME/.codex/hooks/acs_codex.py",
+            "timeout": 10,
+            "statusMessage": "CACS: Bash guard"
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit|MultiEdit|apply_patch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 $HOME/.codex/hooks/acs_codex.py",
+            "timeout": 10,
+            "statusMessage": "CACS: File guard"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash|Write|Edit|MultiEdit|apply_patch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 $HOME/.codex/hooks/acs_codex.py",
+            "timeout": 10,
+            "statusMessage": "CACS: Audit"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 $HOME/.codex/hooks/acs_codex.py",
+            "timeout": 5,
+            "statusMessage": "CACS: Session end"
+          }
+        ]
+      }
+    ]
+  }
+}
