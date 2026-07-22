@@ -993,8 +993,11 @@ def check_bash(command: str) -> Dict:
         return {"allowed": False, "reason": "mass_delete", "violation": w_score}
 
     current_mode = _current_mode()
+    # Strip quoted strings before pattern matching to prevent false positives
+    _stripped = re.sub(r"'[^']*'", "''", command)
+    _stripped = re.sub(r'"[^"\\]*(?:\\.[^"\\]*)*"', '""', _stripped)
     for pattern, desc in COMPILED_BASH:
-        if pattern.search(command):
+        if pattern.search(_stripped):
             category = _classify_bash(desc)
             score = CATEGORY_SCORES.get(category, 25)
 
