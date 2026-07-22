@@ -172,8 +172,8 @@ class AssetLedger:
         if entry.delete_authorized and not entry.verified_copy:
             return "CONFIRM: authorized but no verified copy"
 
-        # Critical asset: recovered from history, no copy, no backup, not authorized
-        if entry.origin == "recovered_from_history" and not entry.verified_copy and not entry.backup_location:
+        # Critical asset: recovered from history or agent-created, no copy, no backup, not authorized
+        if entry.origin in ("recovered_from_history", "agent_write") and not entry.verified_copy and not entry.backup_location:
             return "BLOCK: critical_asset_no_copy_no_backup"
 
         # Has backup: confirm
