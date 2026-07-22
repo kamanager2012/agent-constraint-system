@@ -25,16 +25,17 @@ cd benchmarks/level3 && python3 runner.py    # Level 3: trajectory safety
 
 ## Supported Agents
 
-| Agent | Adapter | Status |
-|-------|---------|--------|
-| **Codex CLI** (OpenAI) | [CACS](docs/codex-integration.md) | Python adapter |
-| **Claude Code** (Anthropic) | ACS | Full deployment (22 files) |
-| **Gemini CLI** (Google) | GACS | Python adapter |
-| **Cursor** | CrACS | Shell bootstrap |
-| **OpenCode** | OACS | TypeScript plugin |
-| **CodeBuddy Code** | BACS | Reuses ACS hooks |
-| **Qoder CN** | QACS | Python adapter |
-| **Hermes Agent** | HACS | Python adapter |
+| Agent | Adapter | Integration | Status |
+|-------|---------|-------------|--------|
+| **Codex CLI** (OpenAI) | [CACS](docs/codex-integration.md) | Python runtime adapter | Integrated |
+| **Claude Code** (Anthropic) | ACS | Native hook integration | Integrated |
+| **CodeBuddy Code** | BACS | Native hook integration | Integrated |
+| **Gemini CLI** (Google) | GACS | Python runtime adapter | Experimental |
+| **OpenCode** | OACS | TypeScript plugin | Experimental |
+| **Cursor** | CrACS | Shell bootstrap | Experimental |
+| **Qoder CN** | QACS | Python runtime adapter | Experimental |
+| **Hermes Agent** | HACS | Python runtime adapter | Experimental |
+| **Grok Build** (xAI) | GACS | Python runtime adapter | Experimental |
 
 ## What ACS Blocks
 
