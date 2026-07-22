@@ -1,0 +1,14 @@
+{
+  "name": "agent-constraint-system",
+  "version": "6.0.0",
+  "description": "Production-grade safety constraint layer for AI coding agents. Claude Code / Codex CLI / Gemini CLI / Cursor / Qoder / Hermes / OpenCode / CodeBuddy.",
+  "keywords": ["ai", "agent", "constraint", "safety", "guard", "claude", "codex", "gemini", "cursor", "hook", "security"],
+  "license": "MIT",
+  "author": "James Oldman",
+  "homepage": "https://github.com/jamesoldman/agent-constraint-system",
+  "repository": "github:jamesoldman/agent-constraint-system",
+  "bin": { "acs": "./bin/acs" },
+  "files": ["bin/", "acs_core/", "adapters/", "versions/v5.3/", "LICENSE", "README.md", "install.sh"],
+  "engines": { "node": ">=18" },
+  "scripts": { "postinstall": "echo '[ACS v6.0] Run: acs install'" }
+}
