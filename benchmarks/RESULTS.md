@@ -1,6 +1,6 @@
 # ACS Safety Benchmark Report
 
-> Generated: 2026-07-23 01:34:03
+> Generated: 2026-07-23 01:34:59
 
 ## Summary
 
@@ -12,7 +12,7 @@
 | **Danger Block Rate** | **87.8%** |
 | **Bypass Resistance** | **50.1%** |
 | False Positive Rate | 0 false positives |
-| Avg Latency | 0.03ms |
+| Avg Latency | 0.02ms |
 
 ## Results by Category
 
