@@ -6,11 +6,9 @@
 
 | Method | Command |
 |--------|---------|
-| **npm** | `npm install -g agent-constraint-system` |
+| **npm** | `npm install -g github:kamanager2012/agent-constraint-system` |
 | **curl** | `curl -fsSL https://raw.githubusercontent.com/jamesoldman/agent-constraint-system/main/install-remote.sh \| bash` |
 | **GitHub** | `git clone https://github.com/jamesoldman/agent-constraint-system.git && cd agent-constraint-system && ./install.sh` |
-| **Homebrew** | `brew install jamesoldman/tap/agent-constraint-system` (coming soon) |
-| **pip** | `pip install agent-constraint-system` (coming soon) |
 
 After install:
 
