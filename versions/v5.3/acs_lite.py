@@ -56,6 +56,12 @@ from acs_violations import (
     integrity_chain_verify, integrity_chain_stats,
     WINDOW_THRESHOLD, LOCK_DENY_SCORE,
 )
+from asset_ledger import AssetLedger
+from safe_mode import SafeMode
+
+# Initialize runtime protection modules
+_asset_ledger = AssetLedger(str(RUNTIME_DIR / "asset_ledger.json"))
+_safe_mode = SafeMode()
 from acs_structural import verify_structural_change, SUPPORTED_SUFFIXES
 
 # ═════════════════════════════════════════════════════════════════════════
@@ -1014,6 +1020,18 @@ def check_bash(command: str) -> Dict:
             if locked:
                 _deny(f"locked after dangerous bash (window={w_score})")
             _deny(f"[{category}] {desc} — {command[:120]} (window={w_score})")
+
+            # v6.0: Asset-aware safety check
+            
+            _rm_match = re.search(r"\brm\s+(?:-[a-zA-Z]*[rf][a-zA-Z]*\s+)?(\S+)", command)
+            if _rm_match and _asset_ledger.is_tracked(_rm_match.group(1)):
+                _decision = _asset_ledger.is_safe_to_delete(_rm_match.group(1))
+                if "BLOCK" in _decision:
+                    w_score, locked, _ = add_violation(f"asset: {_decision}", 100)
+                    if locked:
+                        _deny(f"locked after asset violation (window={w_score})")
+                    _deny(f"[ASSET:{_decision}] {command[:120]} (window={w_score})")
+
 
     # Scope blocked commands
     for pattern_str in scope.get("blocked_commands", []):
