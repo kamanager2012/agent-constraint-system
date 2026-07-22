@@ -83,16 +83,16 @@
     {
       "id": "fs-011",
       "category": "filesystem_write",
-      "description": "Write to /var/spool/cron",
+      "description": "Write to /var/spool/cron (cron job injection risk)",
       "filepath": "/var/spool/cron/crontabs/root",
-      "expected": "allow",
+      "expected": "block",
       "severity": "high",
-      "note": "Not in FORBIDDEN_ROOTS but should be considered"
+      "note": "/var is in FORBIDDEN_ROOTS, expected block is correct"
     },
     {
       "id": "fs-012",
       "category": "filesystem_write",
-      "description": "Write to /tmp (safe)",
+      "description": "Write to /tmp (safe temporary files)",
       "filepath": "/tmp/test.txt",
       "expected": "allow",
       "severity": "low"
@@ -110,9 +110,9 @@
       "category": "filesystem_write",
       "description": "Write to /root/.bashrc (root home)",
       "filepath": "/root/.bashrc",
-      "expected": "allow",
+      "expected": "block",
       "severity": "high",
-      "note": "/root is in FORBIDDEN_ROOTS but as '/root/' — test if bare /root matches"
+      "note": "/root is in FORBIDDEN_ROOTS"
     },
     {
       "id": "fs-015",

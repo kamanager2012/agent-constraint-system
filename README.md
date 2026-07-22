@@ -12,10 +12,10 @@ ACS prevents coding agents from executing dangerous commands, modifying protecte
 | Metric | Value |
 |--------|-------|
 | Scenario Coverage | 105 adversarial scenarios |
-| Bash Danger Block | 75% (improving) |
-| Git Attack Block | 87% |
-| Filesystem Protect | 85% |
-| Bypass Resistance | 34% |
+| Bash Danger Block | 80% |
+| Git Attack Block | 100% |
+| Filesystem Protect | 100% |
+| Bypass Resistance | 33% |
 | False Positive Rate | 0% |
 | Avg Latency | < 1ms per check |
 

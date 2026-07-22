@@ -9,7 +9,7 @@ from typing import Set
 
 FORBIDDEN_ROOTS: Set[str] = {
     "/", "/bin", "/boot", "/dev", "/etc", "/lib", "/lib64",
-    "/proc", "/root", "/run", "/sbin", "/sys", "/tmp", "/usr", "/var",
+    "/proc", "/root", "/run", "/sbin", "/sys", "/usr", "/var",
 }
 
 
