@@ -18,25 +18,19 @@ import os
 import sys
 from pathlib import Path
 
-# Find and import shared core
-CORE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..", ".acs_core")
+# Find and import shared core (flat files in ~/.acs_core or repo-relative)
+CORE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..", "acs_core")
 if not os.path.isdir(CORE_DIR):
     CORE_DIR = os.path.join(Path.home(), ".acs_core")
 sys.path.insert(0, CORE_DIR)
 
-from acs_core import (
-    check_bash,
-    FORBIDDEN_ROOTS,
-    is_forbidden_path,
-    add_violation,
-    clear_violations,
-    should_lock,
-    window_score,
-    load_violations,
-    integrity_store,
-    integrity_verify,
-    AuditLogger,
+from guard import check_bash, DANGEROUS_BASH, GIT_DESTRUCTIVE, clean_command
+from paths import FORBIDDEN_ROOTS, is_forbidden_path, is_self_protect
+from violations import (
+    add_violation, clear_violations, window_score, should_lock,
+    load_violations, integrity_store, integrity_verify,
 )
+from audit import AuditLogger
 
 # ── Agent-specific paths ─────────────────────────────────────────────────────
 CODEX_DIR = Path.home() / ".codex"

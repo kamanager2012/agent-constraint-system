@@ -1,5 +1,5 @@
 #!/bin/bash
-# install.sh ¡ª ACS Multi-Agent Installer
+# install.sh ï¿½ï¿½ ACS Multi-Agent Installer
 # ./install.sh           Interactive menu
 # ./install.sh --all     Install everything detected
 # ./install.sh claude    Install specific agent
@@ -49,7 +49,7 @@ install_core() {
     mkdir -p "$CORE_DST"
     local n=0
     for f in "$CORE_SRC"/*.py; do cp "$f" "$CORE_DST/"; ((n++)); done
-    echo -e "  ${G}OK${N} Core ¡ú ${n} files installed to $CORE_DST"
+    echo -e "  ${G}OK${N} Core ï¿½ï¿½ ${n} files installed to $CORE_DST"
 }
 
 install_claude() {
@@ -81,11 +81,9 @@ install_qoder() {
     cp "$REPO_ROOT/adapters/qoder/qacs.py" "${HOOKS[qoder]}/"
 }
 install_hermes() {
-    mkdir -p ""
-    cp "/adapters/hermes/hacs.py" "/";
-    echo -e "  Note: add hooks config to ~/.hermes/config.yaml:\n    hooks:\n      pre_tool_call:\n        - matcher: terminal|write_file|patch\n          command: ~/.hermes/agent-hooks/hacs.py\n          timeout: 10"; return; }
-_old_grok_placeholder() {
-    echo -e "  ${Y}TBD${N} Hermes Agent hooks not yet available"
+    mkdir -p "$HOME/.hermes/agent-hooks"
+    cp "$REPO_ROOT/adapters/hermes/hacs.py" "$HOME/.hermes/agent-hooks/"
+    cp "$REPO_ROOT/adapters/hermes/hooks.yaml" "$HOME/.hermes/"
 }
 install_codebuddy() {
     mkdir -p "${HOOKS[codebuddy]}"
