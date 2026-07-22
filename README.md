@@ -9,13 +9,11 @@
 
 ACS prevents coding agents from executing dangerous commands, modifying protected files, or circumventing safety constraints — using both pattern matching (Level 1) and asset-aware context (Level 2).
 
-| Level | Scenarios | Pass Rate | Key Metrics |
-|-------|-----------|-----------|-------------|
-| Level | Type | Scenarios | Pass Rate |
-|-------|------|-----------|-----------|
-| Level 1 | Pattern | 105 | 91.4% |
-| Level 2 | Asset | 6 | 100% |
-| Level 3 | Trajectory | 6 | 100% |
+| Level | Scenarios | Pass Rate |
+|-------|-----------|-----------|
+| Level 1 (Pattern) | 105 | 91.4% |
+| Level 2 (Asset) | 6 | 100% |
+| Level 3 (Trajectory) | 6 | 100% |
 
 *FP Rate: 0% | Bypass Resistance: 50% | Self-protect: runtime_required*
 
@@ -23,11 +21,6 @@ ACS prevents coding agents from executing dangerous commands, modifying protecte
 cd benchmarks && python3 runner.py           # Level 1: pattern matching
 cd benchmarks/level2 && python3 runner.py    # Level 2: asset-aware tri-state gate
 cd benchmarks/level3 && python3 runner.py    # Level 3: trajectory safety
-```
-
-```bash
-cd benchmarks && python3 runner.py           # Level 1: pattern matching
-cd benchmarks/level2 && python3 runner.py    # Level 2: asset-aware tri-state gate
 ```
 
 ## Supported Agents

@@ -1,57 +1,46 @@
-# acs_core/safe_mode.py -- Post-Error Safe Mode
-#
-# Elevates risk thresholds after consecutive agent errors.
-# When safe_mode is active, all destructive operations require
-# human confirmation (CONFIRM instead of ALLOW).
-#
-# Used by: check_bash_with_context() in guard.py
-
-import time
-from typing import Dict, Optional
+# acs_core/safe_mode.py -- Post-Error Safe Mode (with persistence)
+import json, os, time
+from typing import Dict
 
 
 class SafeMode:
-    """Post-Error Safe Mode controller.
+    """Post-Error Safe Mode with cross-process persistence.
+
+    Stores state in safe_mode.json so error counts survive
+    across hook process invocations.
 
     Usage:
-        sm = SafeMode()
-
-        # Agent makes a mistake
+        sm = SafeMode("/path/to/safe_mode.json")
         sm.record_error("moved user files to /tmp")
-
-        # Agent makes another mistake
-        sm.record_error("attempted to delete recovered assets")
-
-        # Now safe mode is active (2 errors in 1 hour)
-        sm.is_active()  # -> True
-
-        # Destructive operations require CONFIRM
-        # After 1 hour of error-free operation, auto-resets
+        sm.is_active()  # True after threshold errors
     """
 
-    def __init__(self, threshold: int = 2, window_seconds: int = 3600):
-        self._errors: list[float] = []  # timestamps of errors
+    def __init__(self, storage_path: str = None, threshold: int = 2, window_seconds: int = 3600):
+        self._storage_path = storage_path
+        self._errors: list[float] = []
         self.threshold = threshold
         self.window_seconds = window_seconds
+        if storage_path:
+            self._load()
 
     def record_error(self, description: str = "") -> None:
-        """Record an agent error."""
+        self._load()  # reload from disk to get cross-process state
         self._errors.append(time.time())
+        self._save()
 
     def error_count(self) -> int:
-        """Count errors within the current window."""
+        self._load()
         now = time.time()
         cutoff = now - self.window_seconds
         self._errors = [t for t in self._errors if t > cutoff]
         return len(self._errors)
 
     def is_active(self) -> bool:
-        """Check if safe mode should be active."""
         return self.error_count() >= self.threshold
 
     def reset(self) -> None:
-        """Reset safe mode (after user confirmation)."""
-        self._errors.clear()
+        self._errors = []
+        self._save()
 
     def to_dict(self) -> Dict:
         return {
@@ -61,3 +50,21 @@ class SafeMode:
             "active": self.is_active(),
             "count": self.error_count(),
         }
+
+    def _save(self) -> None:
+        if self._storage_path:
+            os.makedirs(os.path.dirname(self._storage_path), exist_ok=True)
+            with open(self._storage_path, 'w') as f:
+                json.dump(self.to_dict(), f, indent=2)
+
+    def _load(self) -> None:
+        if not self._storage_path or not os.path.exists(self._storage_path):
+            return
+        try:
+            with open(self._storage_path) as f:
+                data = json.load(f)
+            self._errors = data.get("errors", [])
+            self.threshold = data.get("threshold", self.threshold)
+            self.window_seconds = data.get("window_seconds", self.window_seconds)
+        except (json.JSONDecodeError, FileNotFoundError):
+            pass

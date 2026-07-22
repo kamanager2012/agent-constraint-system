@@ -228,3 +228,58 @@ class AssetLedger:
         self._assets.clear()
         if self._storage_path and os.path.exists(self._storage_path):
             os.remove(self._storage_path)
+
+
+class AssetTracker:
+    """Auto-tracking layer that hook adapters call on agent events.
+
+    Instead of manually calling ledger.track() / ledger.move(),
+    adapters call these event handlers and the tracker updates
+    the ledger automatically.
+
+    Usage in adapter:
+        tracker = AssetTracker(ledger)
+
+        # On PostToolUse Write:
+        tracker.on_write(filepath, origin_hint="recovered")
+
+        # On PostToolUse Bash mv:
+        tracker.on_move(source, dest)
+
+        # On PostToolUse Bash rm:
+        tracker.on_delete(filepath)
+    """
+
+    def __init__(self, ledger: AssetLedger):
+        self.ledger = ledger
+
+    def on_write(self, path: str, origin_hint: str = "unknown") -> AssetEntry:
+        """Auto-track when agent writes a file."""
+        return self.ledger.track(path, origin=origin_hint)
+
+    def on_move(self, source: str, dest: str) -> AssetEntry:
+        """Auto-track when agent moves a file."""
+        # If source was tracked, the destination inherits its origin
+        src_entry = self.ledger.get(source)
+        if src_entry:
+            # Track destination with source's origin
+            entry = self.ledger.track(dest, origin=src_entry.origin)
+            entry.moved_from = str(Path(source).resolve())
+            entry.status = "MOVED"
+            entry.verified_copy = False
+            entry.updated_at = time.time()
+            self.ledger._save()
+            return entry
+        else:
+            return self.ledger.move(dest, from_dir=str(Path(source).parent), to_dir=str(Path(dest).parent))
+
+    def on_delete(self, path: str) -> None:
+        """Clean up tracking when agent deletes a file."""
+        entry = self.ledger.get(path)
+        if entry and entry.verified_copy and entry.delete_authorized:
+            self.ledger.untrack(path)
+
+    def on_read(self, path: str) -> None:
+        """Mark path as potentially interesting (doesn't track yet)."""
+        pass  # Read events don't create entries, but could trigger heuristic tracking
+
