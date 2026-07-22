@@ -7,19 +7,17 @@
 
 ## At a Glance
 
-ACS prevents coding agents from executing dangerous commands, modifying protected files, or circumventing safety constraints.
+ACS prevents coding agents from executing dangerous commands, modifying protected files, or circumventing safety constraints — using both pattern matching (Level 1) and asset-aware context (Level 2).
 
-| Metric | Value |
-|--------|-------|
-| Scenario Coverage | 105 adversarial scenarios |
-| Bash Danger Block | 80% |
-| Git Attack Block | 100% |
-| Filesystem Protect | 100% |
-| Bypass Resistance | 33% |
-| False Positive Rate | 0% |
-| Avg Latency | < 1ms per check |
+| Level | Scenarios | Pass Rate | Key Metrics |
+|-------|-----------|-----------|-------------|
+| Level 1 (Pattern) | 105 | 84% | Bash 80%, Git 100%, FS 100%, FP 0% |
+| Level 2 (Asset) | 6 | 100% | Real incident BLOCK, auth ALLOW |
 
-*Benchmark methodology and detailed results in [benchmarks/](benchmarks/).*
+```bash
+cd benchmarks && python3 runner.py           # Level 1: pattern matching
+cd benchmarks/level2 && python3 runner.py    # Level 2: asset-aware tri-state gate
+```
 
 ## Supported Agents
 

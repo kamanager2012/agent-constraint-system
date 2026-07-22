@@ -38,12 +38,13 @@ ACS provides a **language-agnostic safety core** that all coding agents can inte
 
 ## Why OpenAI Should Support This
 
-ACS directly improves the **Codex ecosystem**:
+ACS complements Codex CLI's existing safety mechanisms — sandboxing, approvals, rules, and managed configurations — by adding a **cross-agent, stateful, asset-aware runtime safety layer**. While Codex provides excellent per-agent sandboxing, ACS addresses the gaps that emerge when coding agents work across projects, recover historical data, or interact with other agents' files:
 
-1. **Safety Infrastructure**: Provides Codex CLI with production-grade command safety that currently doesn't exist
-2. **Public Benchmark**: Our 105-scenario benchmark enables quantitative safety measurement across all coding agents
-3. **Ecosystem Leadership**: Supporting cross-agent safety infrastructure positions OpenAI as a leader in responsible coding-agent deployment
-4. **Research Value**: The adversarial scenario dataset and cross-agent testing methodology advance the field of AI safety for autonomous tool use
+1. **Asset Provenance**: Tracks where files came from (recovered from history, agent-generated, user-created)
+2. **Trajectory Risk**: Evaluates risks based on the agent's full action history, not just the current command
+3. **Cross-Agent Consistency**: The same safety policy applies identically across Codex, Claude Code, Gemini CLI, and others
+4. **Public Benchmark**: Our 105-scenario Level 1 + 6-scenario Level 2 benchmark enables quantitative safety measurement
+5. **Research Value**: The asset-ledger approach advances the field of AI safety for autonomous tool use beyond command-level pattern matching
 
 ## Current Status
 
