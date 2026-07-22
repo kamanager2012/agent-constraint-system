@@ -29,19 +29,21 @@ NAME["codebuddy"]="CodeBuddy Code";    DIR["codebuddy"]="$HOME/.codebuddy"
 HOOKS["claude"]="$HOME/.claude/hooks"
 HOOKS["codex"]="$HOME/.codex/hooks"
 HOOKS["gemini"]="$HOME/.gemini/hooks"
-HOOKS["cursor"]="$HOME/.claude/hooks"
+HOOKS["cursor"]="$HOME/.cursor/hooks"
 HOOKS["opencode"]="$HOME/.opencode"
 HOOKS["qoder"]="$HOME/.qoder-cn/hooks"
 HOOKS["hermes"]="$HOME/.hermes/hooks"
 HOOKS["grok"]="$HOME/.grok/hooks"
 HOOKS["codebuddy"]="$HOME/.codebuddy/hooks"
 
-INIT["claude"]="python3 ~/.claude/hooks/acs_lite.py init"
+INIT["claude"]="python3 ~/.claude/hooks/acs_claude.py init"
 INIT["codex"]="python3 ~/.codex/hooks/acs_codex.py init"
 INIT["gemini"]="python3 ~/.gemini/hooks/gacs.py init"
 INIT["qoder"]="python3 ~/.qoder-cn/hooks/qacs.py init"
 INIT["hermes"]="python3 ~/.hermes/agent-hooks/hacs.py init"
-INIT["codebuddy"]="python3 ~/.codebuddy/hooks/acs_lite.py init"
+INIT["codebuddy"]="python3 ~/.codebuddy/hooks/acs_codebuddy.py init"
+INIT["grok"]="python3 ~/.grok/hooks/acs_grok.py init"
+INIT["cursor"]="python3 ~/.cursor/hooks/acs_cursor.py init"
 
 detected() { [[ -d "${DIR[$1]}" ]]; }
 
@@ -54,8 +56,7 @@ install_core() {
 
 install_claude() {
     mkdir -p "${HOOKS[claude]}"
-    cp "$REPO_ROOT/versions/v5.3/"*.py "${HOOKS[claude]}/" 2>/dev/null
-    cp "$REPO_ROOT/versions/v5.3/orchestrator_config.json" "${HOOKS[claude]}/" 2>/dev/null
+    cp "$REPO_ROOT/adapters/claude/acs_claude.py" "${HOOKS[claude]}/"
 }
 install_codex() {
     mkdir -p "${HOOKS[codex]}"
@@ -70,8 +71,8 @@ install_gemini() {
     cp "$REPO_ROOT/adapters/gemini/settings.json" "$HOME/.gemini/"
 }
 install_cursor() {
-    [[ -f "$REPO_ROOT/adapters/cursor/enable-cursor.sh" ]] && \
-        bash "$REPO_ROOT/adapters/cursor/enable-cursor.sh" "${HOOKS[cursor]}" 2>/dev/null
+    mkdir -p "${HOOKS[cursor]}"
+    cp "$REPO_ROOT/adapters/cursor/acs_cursor.py" "${HOOKS[cursor]}/"
 }
 install_opencode() {
     echo "  OpenCode: TypeScript plugin at adapters/opencode/"
@@ -87,14 +88,14 @@ install_hermes() {
 }
 install_codebuddy() {
     mkdir -p "${HOOKS[codebuddy]}"
-    cp "$REPO_ROOT/versions/v5.3/"*.py "${HOOKS[codebuddy]}/" 2>/dev/null
-    cp "$REPO_ROOT/adapters/codebuddy/settings.json" "$HOME/.codebuddy/"
-    ok "BACS -> ${HOOKS[codebuddy]} (reuses ACS hooks)"
+    cp "$REPO_ROOT/adapters/codebuddy/acs_codebuddy.py" "${HOOKS[codebuddy]}/"
+}
+install_grok() {
+    mkdir -p "${HOOKS[grok]}"
+    cp "$REPO_ROOT/adapters/grok/acs_grok.py" "${HOOKS[grok]}/"
 }
 
-install_grok() {
-    echo -e "  ${Y}TBD${N} Grok Build hooks not yet available"
-}
+install_grok_tbd() { :; }  # replaced by above
 
 show_menu() {
     echo -e "\n  Select agents to protect:\n"
