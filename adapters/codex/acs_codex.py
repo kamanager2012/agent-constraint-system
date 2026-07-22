@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 """
-acs_codex.py — CACS v2.0 Codex CLI Adapter
+acs_codex.py -- CACS v3.0 Codex CLI Adapter
 
-Production-grade constraint layer for Codex CLI.
-Imports all guard logic from acs_core/ — this file is just the 
-Codex-specific hook format adapter (~100 lines of glue).
+Production-grade constraint layer for Codex CLI with Asset Ledger
+and Post-Error Safe Mode support.
 
-Hook events: PreToolUse (Bash/Write), PostToolUse (audit), 
+Hook events: PreToolUse (Bash/Write), PostToolUse (audit),
              SessionStart (init), Stop (session end)
 
 CLI: acs_codex.py init | status | unlock --confirm | reset --force --confirm
@@ -18,21 +17,23 @@ import os
 import sys
 from pathlib import Path
 
-# Find and import shared core (flat files in ~/.acs_core or repo-relative)
+# Find and import shared core
 CORE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..", "acs_core")
 if not os.path.isdir(CORE_DIR):
     CORE_DIR = os.path.join(Path.home(), ".acs_core")
 sys.path.insert(0, CORE_DIR)
 
-from guard import check_bash, DANGEROUS_BASH, GIT_DESTRUCTIVE, clean_command
+from guard import check_bash, check_bash_with_context
 from paths import FORBIDDEN_ROOTS, is_forbidden_path, is_self_protect
 from violations import (
     add_violation, clear_violations, window_score, should_lock,
     load_violations, integrity_store, integrity_verify,
 )
 from audit import AuditLogger
+from asset_ledger import AssetLedger
+from safe_mode import SafeMode
 
-# ── Agent-specific paths ─────────────────────────────────────────────────────
+# -- Agent-specific paths --
 CODEX_DIR = Path.home() / ".codex"
 HOOKS_DIR = Path(__file__).resolve().parent
 RUNTIME_DIR = CODEX_DIR / "cacs_runtime"
@@ -43,10 +44,11 @@ AUDIT_LOG = RUNTIME_DIR / "tool-audit.jsonl"
 CRITICAL_FILES = [Path(__file__).resolve()]
 
 audit = AuditLogger(AUDIT_LOG)
+ledger = AssetLedger(str(RUNTIME_DIR / "asset_ledger.json"))
+safe_mode = SafeMode()
 
 
-# ── Helper ───────────────────────────────────────────────────────────────────
-
+# -- Helper --
 def _deny(reason: str) -> None:
     json.dump({
         "hookSpecificOutput": {
@@ -58,7 +60,7 @@ def _deny(reason: str) -> None:
     sys.exit(0)
 
 
-# ── Event Handlers ───────────────────────────────────────────────────────────
+# -- Event Handlers --
 
 def handle_bash(data: dict) -> None:
     command = data.get("tool_input", {}).get("command", "")
@@ -70,11 +72,14 @@ def handle_bash(data: dict) -> None:
     if "acs_codex.py unlock" in cmd or ("acs_codex.py reset" in cmd and "--force" in cmd):
         return
 
-    # Check dangerous patterns
-    result = check_bash(command)
-    if result:
-        audit.log("PreToolUse", "Bash", data.get("session_id", ""), "deny", result)
-        _deny(result)
+    # Level 1 + 2 + 3: pattern + asset + safe_mode
+    result = check_bash_with_context(command, asset_ledger=ledger, error_count=safe_mode.error_count())
+    if result["decision"] == "BLOCK":
+        audit.log("PreToolUse", "Bash", data.get("session_id", ""), "deny", result["reason"])
+        _deny(result["reason"])
+    elif result["decision"] == "CONFIRM":
+        audit.log("PreToolUse", "Bash", data.get("session_id", ""), "confirm", result["reason"])
+        _deny(f"[CONFIRM REQUIRED] {result['reason']}")
 
     # Violation check: if locked, deny
     if should_lock(load_violations(VIOLATIONS_FILE)):
@@ -106,7 +111,7 @@ def handle_session_start(data: dict) -> None:
         audit.log("SessionStart", "", data.get("session_id", ""), "init")
 
 
-# ── CLI ──────────────────────────────────────────────────────────────────────
+# -- CLI --
 
 def cli() -> None:
     cmd = sys.argv[1]
@@ -114,8 +119,10 @@ def cli() -> None:
         RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
         integrity_store(INTEGRITY_FILE, CRITICAL_FILES)
         ok, msg = integrity_verify(INTEGRITY_FILE)
-        print(f"[CACS] Initialized: {RUNTIME_DIR}")
-        print(f"[CACS] Integrity: {msg}")
+        print(f"[CACS v3.0] Initialized: {RUNTIME_DIR}")
+        print(f"[CACS v3.0] Integrity: {msg}")
+        print(f"[CACS v3.0] Asset Ledger: active ({ledger._storage_path})")
+        print(f"[CACS v3.0] Safe Mode: threshold={safe_mode.threshold} errors")
         sys.exit(0)
 
     elif cmd == "unlock":
@@ -124,8 +131,9 @@ def cli() -> None:
             print("[CACS] Run: acs_codex.py unlock --confirm", file=sys.stderr)
             sys.exit(1)
         clear_violations(VIOLATIONS_FILE, LOCK_FILE)
+        safe_mode.reset()
         audit.clear()
-        print("[CACS] Unlocked. Violations and audit cleared.")
+        print("[CACS] Unlocked. Violations, safe mode, and audit cleared.")
         sys.exit(0)
 
     elif cmd == "reset":
@@ -136,13 +144,15 @@ def cli() -> None:
         if "--force" in sys.argv:
             for f in RUNTIME_DIR.glob("*"):
                 f.unlink()
-            print("[CACS] Full reset — all runtime state cleared.")
+            ledger.clear()
+            safe_mode.reset()
+            print("[CACS] Full reset -- all runtime state cleared.")
         else:
             print("[CACS] Use --force to confirm full reset.")
         sys.exit(0)
 
     elif cmd == "status":
-        print("[CACS v2.0] Status Report")
+        print("[CACS v3.0] Status Report")
         if not RUNTIME_DIR.exists():
             print("  Status: NOT INITIALIZED (run init first)")
             sys.exit(0)
@@ -153,10 +163,12 @@ def cli() -> None:
         print(f"  Violations: window_score={ws}, locked={locked}")
         print(f"  Audit: {audit.total_count()} entries, {audit.denied_count()} denied")
         print(f"  Integrity: {msg}")
+        print(f"  Safe Mode: active={safe_mode.is_active()}, errors={safe_mode.error_count()}")
+        print(f"  Asset Ledger: {len(ledger._assets)} tracked assets")
         sys.exit(0)
 
 
-# ── Main ─────────────────────────────────────────────────────────────────────
+# -- Main --
 
 def main() -> None:
     if len(sys.argv) > 1:

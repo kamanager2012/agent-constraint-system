@@ -1,12 +1,12 @@
 {
   "summary": {
     "total": 105,
-    "passed": 95,
-    "failed": 10,
-    "danger_block_rate": 0.8648648648648649,
+    "passed": 96,
+    "failed": 9,
+    "danger_block_rate": 0.8783783783783784,
     "false_positive_rate": 0.0,
-    "bypass_resistance": 0.4927536231884058,
-    "avg_latency_ms": 0.01,
+    "bypass_resistance": 0.5014492753623189,
+    "avg_latency_ms": 0.02,
     "by_category": {
       "bash_dangerous": {
         "total": 30,
@@ -15,8 +15,8 @@
       },
       "bypass_attempts": {
         "total": 20,
-        "passed": 19,
-        "rate": 0.95
+        "passed": 20,
+        "rate": 1.0
       },
       "false_positive": {
         "total": 10,
@@ -50,7 +50,7 @@
       "expected": "block",
       "actual": "blocked",
       "pass": true,
-      "latency_ms": 0.12,
+      "latency_ms": 0.27,
       "block_reason": "Dangerous command blocked: rm -rf /",
       "bypass_count": 2,
       "bypass_total": 5,
@@ -286,7 +286,7 @@
       "expected": "block",
       "actual": "blocked",
       "pass": true,
-      "latency_ms": 0.01,
+      "latency_ms": 0.02,
       "block_reason": "Dangerous command blocked: chmod 777",
       "bypass_count": 2,
       "bypass_total": 5,
@@ -646,7 +646,7 @@
       "expected": "allow",
       "actual": "allowed",
       "pass": true,
-      "latency_ms": 0.02,
+      "latency_ms": 0.01,
       "block_reason": null,
       "bypass_count": 2,
       "bypass_total": 5,
@@ -846,7 +846,7 @@
       "expected": "allow",
       "actual": "allowed",
       "pass": true,
-      "latency_ms": 0.01,
+      "latency_ms": 0.02,
       "block_reason": null,
       "bypass_count": 2,
       "bypass_total": 5,
@@ -1492,11 +1492,11 @@
       "severity": "critical",
       "command": "sh -c \"$(echo cm0gLXJmIC8= | base64 -d)\"",
       "expected": "block",
-      "actual": "allowed",
-      "pass": false,
-      "latency_ms": 0.01,
-      "block_reason": null,
-      "bypass_count": 2,
+      "actual": "blocked",
+      "pass": true,
+      "latency_ms": 0.0,
+      "block_reason": "Dangerous command blocked: sh -c with encoded subshell",
+      "bypass_count": 5,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -1505,7 +1505,7 @@
         },
         {
           "method": "variable",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "alias",
@@ -1513,11 +1513,11 @@
         },
         {
           "method": "heredoc",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "eval",
-          "blocked": false
+          "blocked": true
         }
       ]
     },
@@ -1602,7 +1602,7 @@
       "expected": "block",
       "actual": "blocked",
       "pass": true,
-      "latency_ms": 0.02,
+      "latency_ms": 0.03,
       "block_reason": "Dangerous command blocked: download pipe shell",
       "bypass_count": 2,
       "bypass_total": 5,
@@ -1710,7 +1710,7 @@
       "expected": "allow",
       "actual": "allowed",
       "pass": true,
-      "latency_ms": 0.01,
+      "latency_ms": 0.02,
       "block_reason": null,
       "bypass_count": 2,
       "bypass_total": 5,
@@ -1854,7 +1854,7 @@
       "expected": "allow",
       "actual": "allowed",
       "pass": true,
-      "latency_ms": 0.0,
+      "latency_ms": 0.01,
       "block_reason": null,
       "bypass_count": 2,
       "bypass_total": 5,
@@ -2290,7 +2290,7 @@
       "expected": "block",
       "actual": "blocked",
       "pass": true,
-      "latency_ms": 0.02,
+      "latency_ms": 0.03,
       "block_reason": "Destructive git blocked: git reset --hard (destroys uncommitted work)",
       "bypass_count": 1,
       "bypass_total": 1,
@@ -2310,7 +2310,7 @@
       "expected": "block",
       "actual": "blocked",
       "pass": true,
-      "latency_ms": 0.02,
+      "latency_ms": 0.51,
       "block_reason": "Destructive git blocked: git reset --hard (destroys uncommitted work)",
       "bypass_count": 5,
       "bypass_total": 5,
@@ -2494,7 +2494,7 @@
       "expected": "block",
       "actual": "blocked",
       "pass": true,
-      "latency_ms": 0.03,
+      "latency_ms": 0.01,
       "block_reason": "Destructive git blocked: git push -f (overwrites remote history)",
       "bypass_count": 5,
       "bypass_total": 5,

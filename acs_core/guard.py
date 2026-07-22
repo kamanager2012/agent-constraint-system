@@ -12,7 +12,7 @@ DANGEROUS_BASH: List[Tuple[str, str]] = [
     (r"(?:^|[|;&]\s*)rm\s+-[a-zA-Z]*[rf]\s+/\*",             "rm -rf /*"),
     (r"(?:^|[|;&]\s*)rm\s+-[a-zA-Z]*[rf]\s+\*",              "rm -rf *"),
     (r"(?:^|[|;&]\s*)rm\s+-[a-zA-Z]*[rf]\s+~",                "rm -rf ~"),
-    (r"(?:^|[|;&]\s*)rm\s+-[a-zA-Z]*[rf]\s+\S*PROJ",         "rm -rf project"),
+    (r"(?:^|[|;&]\s*)rm\s+-[a-zA-Z]*[rf]\s+\S*(?:PROJ|REPO|project|repo)\b", "rm -rf project/repo"),
     (r"\btruncate\s+-s\s+0",                                   "truncate to zero"),
 
     # SYSTEM
@@ -118,6 +118,9 @@ def check_bash(command: str) -> str | None:
          "xxd decode pipe to shell"),
         (re.compile(r"\bopenssl\s+(?:base64|enc)\s+-d.*\|.*(?:ba)?sh\b", re.I),
          "openssl decode pipe to shell"),
+        # sh -c with encoded content in subshell (before quote stripping)
+        (re.compile(r"\bsh\s+-c\s+.*\$\(.*(?:base64|xxd|openssl).*(?:-d|--decode).*\)", re.I),
+         "sh -c with encoded subshell"),
     ]
     for pattern, desc in bypass_patterns:
         if pattern.search(command):
@@ -163,45 +166,44 @@ def check_bash_with_context(
         if asset_result:
             return asset_result
 
-    # Level 3: Post-error safe mode
-    if error_count >= 2 and _is_destructive(command):
+    # Level 3: Post-error safe mode (only upgrades ALLOW -> CONFIRM, never downgrades BLOCK)
+    if error_count >= 2 and _is_destructive(command) and result["decision"] == "ALLOW":
         return {
             "decision": "CONFIRM",
-            "reason": "safe_mode: agent has {} recent errors".format(error_count),
+            "reason": "safe_mode: agent has 2+ recent errors".format(error_count),
         }
 
     return {"decision": "ALLOW", "reason": "safe"}
 
 
 def _is_destructive(command: str) -> bool:
-    """Check if a command is potentially destructive (rm, mv, git destructive, etc.)."""
-    return bool(re.search(r"\b(?:rm|mv|git\s+(?:reset|clean|push|checkout|restore))\b", command))
+    """Check if a command is potentially destructive (rm, git destructive, etc.)."""
+    return bool(re.search(r"\b(?:rm\s+-[rf]|git\s+(?:reset|clean|push|checkout|restore))\b", command))
 
 
 def _check_asset_safety(command: str, ledger) -> Optional[dict]:
     """Check command against the asset ledger for context-aware safety."""
     import re as _re
 
-    # Extract paths from rm/mv commands
     rm_match = _re.search(r"\brm\s+(?:-[a-zA-Z]*[rf][a-zA-Z]*\s+)?(\S+)", command)
     mv_match = _re.search(r"\bmv\s+\S+\s+(\S+)", command)
 
-    target_path = None
-    if rm_match:
-        target_path = rm_match.group(1)
-    elif mv_match:
-        target_path = mv_match.group(1)
+    is_rm = rm_match is not None
+    target_path = rm_match.group(1) if rm_match else (mv_match.group(1) if mv_match else None)
 
     if target_path is None:
         return None
 
-    # Check if the target is a tracked asset
     if not ledger.is_tracked(target_path):
         return None
 
     decision = ledger.is_safe_to_delete(target_path)
     if "BLOCK" in decision:
-        return {"decision": "BLOCK", "reason": "asset_ledger: {}".format(decision)}
+        # rm of critical asset -> BLOCK, mv of critical asset -> CONFIRM
+        if is_rm:
+            return {"decision": "BLOCK", "reason": "asset_ledger: {}".format(decision)}
+        else:
+            return {"decision": "CONFIRM", "reason": "asset_ledger: {}".format(decision.replace("BLOCK:", "mv_tracked_asset:"))}
     elif "CONFIRM" in decision:
         return {"decision": "CONFIRM", "reason": "asset_ledger: {}".format(decision)}
 
