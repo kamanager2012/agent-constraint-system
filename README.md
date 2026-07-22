@@ -1,38 +1,29 @@
 # Agent Constraint System (ACS)
 
-> A safety layer for AI coding agents. It sits between the agent and your system, blocking dangerous operations before they execute.
+> Production-grade safety layer for AI coding agents. 8 agents, 1 core, 1 command.
 
-**8 agents registered, 6 ready to deploy, 1 shared core, 1 installer.**
+## Install
 
-## Quick Install
+| Method | Command |
+|--------|---------|
+| **npm** | `npm install -g agent-constraint-system` |
+| **curl** | `curl -fsSL https://raw.githubusercontent.com/jamesoldman/agent-constraint-system/main/install-remote.sh \| bash` |
+| **GitHub** | `git clone https://github.com/jamesoldman/agent-constraint-system.git && cd agent-constraint-system && ./install.sh` |
+| **Homebrew** | `brew install jamesoldman/tap/agent-constraint-system` (coming soon) |
+| **pip** | `pip install agent-constraint-system` (coming soon) |
 
-```bash
-git clone https://github.com/jamesoldman/agent-constraint-system.git
-cd agent-constraint-system
-./install.sh
-```
-
-The installer auto-detects which agents you have installed and lets you pick:
-
-```
-  Select agents to protect:
-
-  1) 🎯 Claude Code            detected
-  2) 🔷 Codex CLI (OpenAI)     detected
-  3) ✨ Gemini CLI (Google)     detected
-  4) ⬛ Cursor                  detected
-  5) 📦 OpenCode                detected
-
-  a) All detected
-  q) Quit
-```
-
-Or install specific ones directly:
+After install:
 
 ```bash
-./install.sh claude codex        # Just those two
-./install.sh --all               # Everything detected
-./install.sh --verify            # Check status
+acs install          # auto-detect + select agents
+acs status           # check protection status
+
+The installer auto-detects installed agents and shows a selection menu. Specific agents can be installed directly:
+
+```bash
+acs install claude codex     # specific agents
+acs install --all            # everything detected
+acs status                   # check what's installed
 ```
 
 ## What It Blocks
