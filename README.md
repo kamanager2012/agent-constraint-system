@@ -11,8 +11,11 @@ ACS prevents coding agents from executing dangerous commands, modifying protecte
 
 | Level | Scenarios | Pass Rate | Key Metrics |
 |-------|-----------|-----------|-------------|
-| Level 1 (Pattern) | 105 | 84% | Bash 80%, Git 100%, FS 100%, FP 0% |
+| Level 1 (Pattern) | 105 | 90.5% | Bash 97%, Git 100%, FS 100%, FP 0% |
 | Level 2 (Asset) | 6 | 100% | Real incident BLOCK, auth ALLOW |
+
+*Self-protect scenarios require runtime context (marked `runtime_required`).*
+*95/105 scenarios pass in standalone mode; all 105 pass in-deployment.*
 
 ```bash
 cd benchmarks && python3 runner.py           # Level 1: pattern matching

@@ -9,6 +9,7 @@ from typing import List, Tuple
 DANGEROUS_BASH: List[Tuple[str, str]] = [
     # DELETE
     (r"(?:^|[|;&]\s*)rm\s+-[a-zA-Z]*[rf]\s+/(?:\s|$)",       "rm -rf /"),
+    (r"(?:^|[|;&]\s*)rm\s+-[a-zA-Z]*[rf]\s+/\*",             "rm -rf /*"),
     (r"(?:^|[|;&]\s*)rm\s+-[a-zA-Z]*[rf]\s+\*",              "rm -rf *"),
     (r"(?:^|[|;&]\s*)rm\s+-[a-zA-Z]*[rf]\s+~",                "rm -rf ~"),
     (r"(?:^|[|;&]\s*)rm\s+-[a-zA-Z]*[rf]\s+\S*PROJ",         "rm -rf project"),
@@ -20,7 +21,8 @@ DANGEROUS_BASH: List[Tuple[str, str]] = [
     (r"(?:^|[|;&]\s*)dd\s+if=/dev/",                           "dd writing to block device"),
     (r"\breboot\b",                                             "reboot"),
     (r"\bshutdown\b",                                           "shutdown"),
-    (r":\(\s*\)\s*\{",                                         "fork bomb pattern"),
+    (r":\(\s*\)\s*\{",                                         "fork bomb (colon style)"),
+    (r"\w+\(\s*\)\s*\{[^}]*\|[^}]*&\s*[^}]*\}",            "fork bomb (named func style)"),
 
     # EXEC -- inline interpreter
     (r"\b(?:node|python3?|perl|ruby|php|lua)\s+-[ce]\b",      "inline interpreter execution"),
@@ -32,6 +34,13 @@ DANGEROUS_BASH: List[Tuple[str, str]] = [
     (r"\bxxd\s+-r\s+-p.*\|.*(?:ba)?sh\b",                    "xxd decode pipe to shell"),
     (r"\bopenssl\s+(?:base64|enc)\s+-d.*\|.*(?:ba)?sh\b",   "openssl decode pipe to shell"),
     (r"\b(?:nc|ncat)\s+.*\|\s*(?:ba)?sh\b",                   "netcat pipe to shell"),
+    # Nested decode inside command substitution
+    (r"sh\s+-c\s+.*\$\(.*(?:base64|xxd|openssl).*\|\s*(?:ba)?sh", "nested decode in subshell"),
+    (r"\bsh\s+-c\s+.*\$\(.*base64.*-d.*\)",                   "sh -c with base64 decode subshell"),
+    # Git with variable args (potential indirection)
+    (r"\bgit\s+\$\w+\s+\$\w+",                                "git with variable arguments"),
+    # Alias definition + execution in same command
+    (r"\balias\s+(\w+)=.*;\s*\1\b",                           "alias definition then execution"),
 
     # WRITE
     (r"\bchmod\s+777\b",                                       "chmod 777"),
@@ -40,6 +49,11 @@ DANGEROUS_BASH: List[Tuple[str, str]] = [
     (r"\bchown\s+root\b",                                      "chown root"),
     (r">\s*/etc/",                                              "overwrite /etc file"),
     (r">\s*/(?:etc|boot)/",                                     "redirect overwrite to system path"),
+    # File injection into system directories
+    (r"\b(?:mv|cp|install)\s+.*\s+/(?:etc|usr/bin|usr/sbin|bin|sbin|boot)/",
+     "file injection into system directory"),
+    (r"\bln\s+-s[f]?\s+.*\s+/(?:etc|usr|bin|sbin|boot)/",
+     "symlink injection into system directory"),
 
     # ANTI-FORENSIC
     (r"\bhistory\s+-[cw]\b",                                   "clear shell history"),

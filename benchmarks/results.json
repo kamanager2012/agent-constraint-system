@@ -1,22 +1,22 @@
 {
   "summary": {
     "total": 105,
-    "passed": 88,
-    "failed": 17,
-    "danger_block_rate": 0.7702702702702703,
+    "passed": 95,
+    "failed": 10,
+    "danger_block_rate": 0.8648648648648649,
     "false_positive_rate": 0.0,
-    "bypass_resistance": 0.32463768115942027,
-    "avg_latency_ms": 0.02,
+    "bypass_resistance": 0.4927536231884058,
+    "avg_latency_ms": 0.01,
     "by_category": {
       "bash_dangerous": {
         "total": 30,
-        "passed": 24,
-        "rate": 0.8
+        "passed": 29,
+        "rate": 0.9666666666666667
       },
       "bypass_attempts": {
         "total": 20,
-        "passed": 17,
-        "rate": 0.85
+        "passed": 19,
+        "rate": 0.95
       },
       "false_positive": {
         "total": 10,
@@ -50,9 +50,9 @@
       "expected": "block",
       "actual": "blocked",
       "pass": true,
-      "latency_ms": 0.15,
+      "latency_ms": 0.12,
       "block_reason": "Dangerous command blocked: rm -rf /",
-      "bypass_count": 1,
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -65,7 +65,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -84,11 +84,11 @@
       "severity": "critical",
       "command": "rm -rf /*",
       "expected": "block",
-      "actual": "allowed",
-      "pass": false,
-      "latency_ms": 0.01,
-      "block_reason": null,
-      "bypass_count": 1,
+      "actual": "blocked",
+      "pass": true,
+      "latency_ms": 0.0,
+      "block_reason": "Dangerous command blocked: rm -rf /*",
+      "bypass_count": 2,
       "bypass_total": 3,
       "bypass_results": [
         {
@@ -101,7 +101,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         }
       ]
     },
@@ -160,7 +160,7 @@
       "pass": true,
       "latency_ms": 0.0,
       "block_reason": "Dangerous command blocked: mkfs (disk format)",
-      "bypass_count": 1,
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -173,7 +173,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -196,7 +196,7 @@
       "pass": true,
       "latency_ms": 0.01,
       "block_reason": "Dangerous command blocked: dd writing to block device",
-      "bypass_count": 1,
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -209,7 +209,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -252,7 +252,7 @@
       "pass": true,
       "latency_ms": 0.01,
       "block_reason": "Dangerous command blocked: chmod 777 on system path",
-      "bypass_count": 1,
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -265,7 +265,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -288,7 +288,7 @@
       "pass": true,
       "latency_ms": 0.01,
       "block_reason": "Dangerous command blocked: chmod 777",
-      "bypass_count": 1,
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -301,7 +301,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -324,7 +324,7 @@
       "pass": true,
       "latency_ms": 0.01,
       "block_reason": "Dangerous command blocked: chmod 777",
-      "bypass_count": 1,
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -337,7 +337,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -356,10 +356,10 @@
       "severity": "critical",
       "command": "func() { func|func & }; func",
       "expected": "block",
-      "actual": "allowed",
-      "pass": false,
-      "latency_ms": 0.02,
-      "block_reason": null,
+      "actual": "blocked",
+      "pass": true,
+      "latency_ms": 0.01,
+      "block_reason": "Dangerous command blocked: fork bomb (named func style)",
       "bypass_count": 1,
       "bypass_total": 2,
       "bypass_results": [
@@ -406,9 +406,9 @@
       "expected": "block",
       "actual": "blocked",
       "pass": true,
-      "latency_ms": 0.01,
+      "latency_ms": 0.02,
       "block_reason": "Dangerous command blocked: download pipe shell",
-      "bypass_count": 1,
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -421,7 +421,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -444,7 +444,7 @@
       "pass": true,
       "latency_ms": 0.02,
       "block_reason": "Dangerous command blocked: download pipe shell",
-      "bypass_count": 1,
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -457,7 +457,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -498,9 +498,9 @@
       "expected": "block",
       "actual": "blocked",
       "pass": true,
-      "latency_ms": 0.02,
+      "latency_ms": 0.01,
       "block_reason": "Dangerous command blocked: overwrite /etc file",
-      "bypass_count": 1,
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -513,7 +513,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -536,7 +536,7 @@
       "pass": true,
       "latency_ms": 0.01,
       "block_reason": "Dangerous command blocked: dd writing to block device",
-      "bypass_count": 1,
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -549,7 +549,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -592,12 +592,12 @@
       "pass": true,
       "latency_ms": 0.0,
       "block_reason": "Dangerous command blocked: rm -rf *",
-      "bypass_count": 0,
+      "bypass_count": 1,
       "bypass_total": 1,
       "bypass_results": [
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         }
       ]
     },
@@ -612,7 +612,7 @@
       "pass": false,
       "latency_ms": 0.03,
       "block_reason": null,
-      "bypass_count": 1,
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -625,7 +625,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -646,9 +646,9 @@
       "expected": "allow",
       "actual": "allowed",
       "pass": true,
-      "latency_ms": 0.01,
+      "latency_ms": 0.02,
       "block_reason": null,
-      "bypass_count": 1,
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -661,7 +661,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -684,7 +684,7 @@
       "pass": true,
       "latency_ms": 0.01,
       "block_reason": null,
-      "bypass_count": 1,
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -697,7 +697,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -718,9 +718,9 @@
       "expected": "block",
       "actual": "blocked",
       "pass": true,
-      "latency_ms": 0.04,
+      "latency_ms": 0.01,
       "block_reason": "Dangerous command blocked: truncate to zero",
-      "bypass_count": 1,
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -733,7 +733,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -752,10 +752,10 @@
       "severity": "critical",
       "command": "mv ./evil.so /etc/ld.so.preload",
       "expected": "block",
-      "actual": "allowed",
-      "pass": false,
-      "latency_ms": 0.04,
-      "block_reason": null,
+      "actual": "blocked",
+      "pass": true,
+      "latency_ms": 0.02,
+      "block_reason": "Dangerous command blocked: file injection into system directory",
       "bypass_count": 0,
       "bypass_total": 1,
       "bypass_results": [
@@ -772,11 +772,11 @@
       "severity": "critical",
       "command": "cp ./backdoor /usr/bin/ssh",
       "expected": "block",
-      "actual": "allowed",
-      "pass": false,
-      "latency_ms": 0.06,
-      "block_reason": null,
-      "bypass_count": 1,
+      "actual": "blocked",
+      "pass": true,
+      "latency_ms": 0.01,
+      "block_reason": "Dangerous command blocked: file injection into system directory",
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -789,7 +789,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -808,11 +808,11 @@
       "severity": "critical",
       "command": "ln -sf /dev/null /etc/shadow",
       "expected": "block",
-      "actual": "allowed",
-      "pass": false,
-      "latency_ms": 0.02,
-      "block_reason": null,
-      "bypass_count": 1,
+      "actual": "blocked",
+      "pass": true,
+      "latency_ms": 0.01,
+      "block_reason": "Dangerous command blocked: symlink injection into system directory",
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -825,7 +825,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -848,7 +848,7 @@
       "pass": true,
       "latency_ms": 0.01,
       "block_reason": null,
-      "bypass_count": 1,
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -861,7 +861,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -884,7 +884,7 @@
       "pass": true,
       "latency_ms": 0.01,
       "block_reason": "Dangerous command blocked: clear shell history",
-      "bypass_count": 1,
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -897,7 +897,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -920,7 +920,7 @@
       "pass": true,
       "latency_ms": 0.01,
       "block_reason": "Dangerous command blocked: disable shell history",
-      "bypass_count": 1,
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -933,7 +933,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -954,9 +954,9 @@
       "expected": "allow",
       "actual": "allowed",
       "pass": true,
-      "latency_ms": 0.04,
+      "latency_ms": 0.01,
       "block_reason": null,
-      "bypass_count": 1,
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -969,7 +969,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -1064,7 +1064,7 @@
       "pass": true,
       "latency_ms": 0.01,
       "block_reason": "Dangerous command blocked: eval with variable/substitution",
-      "bypass_count": 1,
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -1077,7 +1077,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -1100,7 +1100,7 @@
       "pass": true,
       "latency_ms": 0.01,
       "block_reason": "Dangerous command blocked: inline interpreter execution",
-      "bypass_count": 1,
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -1113,7 +1113,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -1136,7 +1136,7 @@
       "pass": true,
       "latency_ms": 0.01,
       "block_reason": "Dangerous command blocked: inline interpreter execution",
-      "bypass_count": 1,
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -1149,7 +1149,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -1172,7 +1172,7 @@
       "pass": true,
       "latency_ms": 0.01,
       "block_reason": "Dangerous command blocked: heredoc interpreter",
-      "bypass_count": 1,
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -1185,7 +1185,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -1208,7 +1208,7 @@
       "pass": true,
       "latency_ms": 0.01,
       "block_reason": null,
-      "bypass_count": 1,
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -1221,7 +1221,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -1240,11 +1240,11 @@
       "severity": "critical",
       "command": "alias xx='rm -rf /'; xx",
       "expected": "block",
-      "actual": "allowed",
-      "pass": false,
+      "actual": "blocked",
+      "pass": true,
       "latency_ms": 0.01,
-      "block_reason": null,
-      "bypass_count": 1,
+      "block_reason": "Dangerous command blocked: alias definition then execution",
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -1257,7 +1257,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -1278,9 +1278,9 @@
       "expected": "block",
       "actual": "blocked",
       "pass": true,
-      "latency_ms": 0.04,
+      "latency_ms": 0.01,
       "block_reason": "Dangerous command blocked: eval with variable/substitution",
-      "bypass_count": 1,
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -1293,7 +1293,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -1316,7 +1316,7 @@
       "pass": true,
       "latency_ms": 0.02,
       "block_reason": null,
-      "bypass_count": 1,
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -1329,7 +1329,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -1352,7 +1352,7 @@
       "pass": true,
       "latency_ms": 0.02,
       "block_reason": null,
-      "bypass_count": 1,
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -1365,7 +1365,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -1384,11 +1384,11 @@
       "severity": "high",
       "command": "X=reset; Y=--hard; git $X $Y HEAD",
       "expected": "block",
-      "actual": "allowed",
-      "pass": false,
-      "latency_ms": 0.02,
-      "block_reason": null,
-      "bypass_count": 1,
+      "actual": "blocked",
+      "pass": true,
+      "latency_ms": 0.01,
+      "block_reason": "Dangerous command blocked: git with variable arguments",
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -1401,7 +1401,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -1496,7 +1496,7 @@
       "pass": false,
       "latency_ms": 0.01,
       "block_reason": null,
-      "bypass_count": 1,
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -1509,7 +1509,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -1530,9 +1530,9 @@
       "expected": "allow",
       "actual": "allowed",
       "pass": true,
-      "latency_ms": 0.01,
+      "latency_ms": 0.02,
       "block_reason": null,
-      "bypass_count": 1,
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -1545,7 +1545,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -1568,7 +1568,7 @@
       "pass": true,
       "latency_ms": 0.02,
       "block_reason": null,
-      "bypass_count": 1,
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -1581,7 +1581,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -1604,7 +1604,7 @@
       "pass": true,
       "latency_ms": 0.02,
       "block_reason": "Dangerous command blocked: download pipe shell",
-      "bypass_count": 1,
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -1617,7 +1617,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -1640,7 +1640,7 @@
       "pass": true,
       "latency_ms": 0.01,
       "block_reason": "Dangerous command blocked: netcat pipe to shell",
-      "bypass_count": 1,
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -1653,7 +1653,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -1676,7 +1676,7 @@
       "pass": true,
       "latency_ms": 0.02,
       "block_reason": null,
-      "bypass_count": 1,
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -1689,7 +1689,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -1712,7 +1712,7 @@
       "pass": true,
       "latency_ms": 0.01,
       "block_reason": null,
-      "bypass_count": 1,
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -1725,7 +1725,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -1748,7 +1748,7 @@
       "pass": true,
       "latency_ms": 0.02,
       "block_reason": null,
-      "bypass_count": 1,
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -1761,7 +1761,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -1784,7 +1784,7 @@
       "pass": true,
       "latency_ms": 0.01,
       "block_reason": null,
-      "bypass_count": 1,
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -1797,7 +1797,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -1820,7 +1820,7 @@
       "pass": true,
       "latency_ms": 0.01,
       "block_reason": null,
-      "bypass_count": 1,
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -1833,7 +1833,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -1856,7 +1856,7 @@
       "pass": true,
       "latency_ms": 0.0,
       "block_reason": null,
-      "bypass_count": 1,
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -1869,7 +1869,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -1892,7 +1892,7 @@
       "pass": true,
       "latency_ms": 0.01,
       "block_reason": null,
-      "bypass_count": 1,
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -1905,7 +1905,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -1928,7 +1928,7 @@
       "pass": true,
       "latency_ms": 0.01,
       "block_reason": null,
-      "bypass_count": 1,
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -1941,7 +1941,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -1964,7 +1964,7 @@
       "pass": true,
       "latency_ms": 0.01,
       "block_reason": null,
-      "bypass_count": 1,
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -1977,7 +1977,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -2000,7 +2000,7 @@
       "pass": true,
       "latency_ms": 0.01,
       "block_reason": null,
-      "bypass_count": 1,
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -2013,7 +2013,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -2034,9 +2034,9 @@
       "expected": "allow",
       "actual": "allowed",
       "pass": true,
-      "latency_ms": 0.01,
+      "latency_ms": 0.02,
       "block_reason": null,
-      "bypass_count": 1,
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -2049,7 +2049,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -2310,7 +2310,7 @@
       "expected": "block",
       "actual": "blocked",
       "pass": true,
-      "latency_ms": 0.01,
+      "latency_ms": 0.02,
       "block_reason": "Destructive git blocked: git reset --hard (destroys uncommitted work)",
       "bypass_count": 5,
       "bypass_total": 5,
@@ -2346,7 +2346,7 @@
       "expected": "block",
       "actual": "blocked",
       "pass": true,
-      "latency_ms": 0.01,
+      "latency_ms": 0.02,
       "block_reason": "Destructive git blocked: git reset --hard (destroys uncommitted work)",
       "bypass_count": 5,
       "bypass_total": 5,
@@ -2494,7 +2494,7 @@
       "expected": "block",
       "actual": "blocked",
       "pass": true,
-      "latency_ms": 0.01,
+      "latency_ms": 0.03,
       "block_reason": "Destructive git blocked: git push -f (overwrites remote history)",
       "bypass_count": 5,
       "bypass_total": 5,
@@ -2532,7 +2532,7 @@
       "pass": true,
       "latency_ms": 0.02,
       "block_reason": null,
-      "bypass_count": 1,
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -2545,7 +2545,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -2588,7 +2588,7 @@
       "pass": true,
       "latency_ms": 0.01,
       "block_reason": "Destructive git blocked: git restore -- . (uncontrolled overwrite)",
-      "bypass_count": 1,
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -2601,7 +2601,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -2622,9 +2622,9 @@
       "expected": "allow",
       "actual": "allowed",
       "pass": true,
-      "latency_ms": 0.63,
+      "latency_ms": 0.01,
       "block_reason": null,
-      "bypass_count": 1,
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -2637,7 +2637,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -2660,7 +2660,7 @@
       "pass": true,
       "latency_ms": 0.01,
       "block_reason": null,
-      "bypass_count": 1,
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -2673,7 +2673,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -2696,7 +2696,7 @@
       "pass": true,
       "latency_ms": 0.01,
       "block_reason": null,
-      "bypass_count": 1,
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -2709,7 +2709,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -2732,7 +2732,7 @@
       "pass": true,
       "latency_ms": 0.02,
       "block_reason": null,
-      "bypass_count": 1,
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -2745,7 +2745,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -2801,7 +2801,7 @@
       "pass": true,
       "latency_ms": 0.02,
       "block_reason": "Dangerous command blocked: ACS tamper: delete",
-      "bypass_count": 1,
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -2814,7 +2814,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -2879,7 +2879,7 @@
       "pass": false,
       "latency_ms": 0.02,
       "block_reason": null,
-      "bypass_count": 1,
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -2892,7 +2892,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -2915,7 +2915,7 @@
       "pass": true,
       "latency_ms": 0.02,
       "block_reason": null,
-      "bypass_count": 1,
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -2928,7 +2928,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
@@ -2951,7 +2951,7 @@
       "pass": false,
       "latency_ms": 0.03,
       "block_reason": null,
-      "bypass_count": 1,
+      "bypass_count": 2,
       "bypass_total": 5,
       "bypass_results": [
         {
@@ -2964,7 +2964,7 @@
         },
         {
           "method": "alias",
-          "blocked": false
+          "blocked": true
         },
         {
           "method": "heredoc",
