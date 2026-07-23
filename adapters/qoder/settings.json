@@ -2,47 +2,12 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Bash",
+        "matcher": "Bash|Write|Edit|Read",
         "hooks": [
           {
             "type": "command",
-            "command": "python3 $HOME/.qoder-cn/hooks/qacs.py",
-            "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "python3 $HOME/.codebuddy/hooks/sed_guard.py",
-            "timeout": 5
-          },
-          {
-            "type": "command",
-            "command": "python3 $HOME/.codebuddy/hooks/filesystem_guard.py",
-            "timeout": 5
-          }
-        ]
-      },
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 $HOME/.qoder-cn/hooks/qacs.py",
-            "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "python3 $HOME/.codebuddy/hooks/filesystem_guard.py",
-            "timeout": 5
-          }
-        ]
-      },
-      {
-        "matcher": "Read",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 $HOME/.codebuddy/hooks/read_guard.py",
-            "timeout": 10
+            "command": "python3 $HOME/.codebuddy/hooks/acs_orchestrator.py",
+            "timeout": 15
           }
         ]
       }
@@ -53,33 +18,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 $HOME/.qoder-cn/hooks/qacs.py",
-            "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "python3 $HOME/.codebuddy/hooks/abi_guard.py",
-            "timeout": 5
-          },
-          {
-            "type": "command",
-            "command": "python3 $HOME/.codebuddy/hooks/token_budget.py",
-            "timeout": 3
-          },
-          {
-            "type": "command",
-            "command": "python3 $HOME/.codebuddy/hooks/risk_engine.py assess --stdin",
-            "timeout": 5
-          }
-        ]
-      },
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 $HOME/.codebuddy/hooks/proposal_guard.py",
-            "timeout": 5
+            "command": "python3 $HOME/.codebuddy/hooks/acs_orchestrator.py",
+            "timeout": 15
           }
         ]
       }
@@ -89,18 +29,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 $HOME/.qoder-cn/hooks/qacs.py",
-            "timeout": 5
-          },
-          {
-            "type": "command",
-            "command": "python3 $HOME/.codebuddy/hooks/stability_report.py check",
-            "timeout": 5
-          },
-          {
-            "type": "command",
-            "command": "python3 $HOME/.codebuddy/hooks/runtime_loop.py tick --reason session_end",
-            "timeout": 5
+            "command": "python3 $HOME/.codebuddy/hooks/acs_orchestrator.py",
+            "timeout": 10
           }
         ]
       }

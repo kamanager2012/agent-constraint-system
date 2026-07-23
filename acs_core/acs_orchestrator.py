@@ -23,6 +23,7 @@ AGENT_MAP = {
     str(_HOME / ".codebuddy" / "hooks"):      "codebuddy",
     str(_HOME / ".codex" / "hooks"):           "codex",
     str(_HOME / ".hermes" / "agent-hooks"):    "hermes",
+    str(_HOME / ".qoder-cn" / "hooks"):          "qoder",
 }
 
 TOOL_ALIAS = {
@@ -50,6 +51,7 @@ ADAPTER = {
     "codebuddy": "acs_lite.py",
     "codex":     "acs_codex.py",
     "hermes":    "hacs.py",
+    "qoder":     "qacs.py",
 }.get(AGENT, "acs_lite.py")
 
 DISPATCH = {
