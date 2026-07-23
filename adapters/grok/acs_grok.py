@@ -2,8 +2,10 @@
 """
 acs_grok.py -- Grok Build (xAI) Adapter
 
-Imports from acs_core (single source of truth).
-Uses Grok's own ~/.grok/ runtime directory. Never reads Claude's config.
+Grok Build is a Claude Code fork — it reads hook/permission definitions
+from ~/.claude/settings.local.json and executes Claude's hook chain
+(hook_orchestrator.py). This adapter is a reference implementation for
+future independent deployment; currently Grok runs Claude's ACS directly.
 
 Hook events: PreToolUse (Bash/Write), PostToolUse (audit)
 CLI: acs_grok.py init | status | unlock --confirm | reset --force --confirm
