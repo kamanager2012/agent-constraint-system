@@ -1,4 +1,4 @@
-# ACS v5.3 Source Snapshot
+# ACS v1.5 Source Snapshot
 
 **Created**: 2026-07-22
 **Source**: `~/.claude/hooks/` (production deployment)
@@ -44,7 +44,7 @@ deployment, making diff/rollback/review impossible without live access.
 
 This snapshot is a 1:1 mirror of the deployed `~/.claude/hooks/` as of 2026-07-22.
 It includes all P0/P1 security fixes and P2/P3 improvements applied during the
-v5.3 optimization round:
+v1.5 optimization round:
 
 | Fix | File |
 |-----|------|

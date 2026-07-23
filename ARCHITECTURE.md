@@ -1,4 +1,4 @@
-# ACS v5.3 架构
+# ACS v1.5 架构
 
 ## Hook 管线
 
@@ -23,7 +23,7 @@ Stop
 ## 引擎架构
 
 ```
-acs_lite.py (v5.3 主引擎)
+acs_lite.py (v1.5 主引擎)
   ├── 路径解析 + ZONE 分区
   ├── ACS_SELF_PROTECT: hooks/ + runtime/ + settings.json + CLAUDE.md + .claude.json
   ├── 滑动窗口违规追踪 (600s window, WINDOW_THRESHOLD=80, HARD_LOCK=150)
@@ -36,15 +36,15 @@ acs_lite.py (v5.3 主引擎)
 
 ```
 ~/.claude/runtime/  (全部受 ACS_SELF_PROTECT 保护)
-  ├── ACTIVE_TASK.json    ← 当前 scope + task 配置 (v5.3: 权威源)
-  ├── TASK_SCOPE.json     ← scope 兼容副本 (v5.3: 仅回退用)
+  ├── ACTIVE_TASK.json    ← 当前 scope + task 配置 (v1.5: 权威源)
+  ├── TASK_SCOPE.json     ← scope 兼容副本 (v1.5: 仅回退用)
   ├── VIOLATIONS.json     ← 违规事件数组 + window_score
   ├── INTEGRITY.json      ← 完整性链 (sha256 快照)
   ├── LOCKED              ← 锁文件 (存在 = 锁定)
   ├── MODE.json           ← ACTIVE / STRICT
   └── ACS_GUIDE.md        ← 操作指南
 
-~/.claude/ 受保护配置文件 (v5.2+):
+~/.claude/ 受保护配置文件 (v1.5):
   ├── settings.json       ← hook 注册 + 权限 (Write/Edit: ZONE=SYSTEM deny, Bash: ACS_SELF_PROTECT)
   ├── settings.local.json ← 本地覆盖
   ├── CLAUDE.md           ← 宪法文件

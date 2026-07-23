@@ -23,10 +23,10 @@ case "${1:-}" in
     bash "$PKG_DIR/install.sh" --verify
     ;;
   version|-v|--version)
-    echo "ACS v6.1.0"
+    echo "ACS v1.5.0"
     ;;
   *)
-    echo "ACS v6.0 — Agent Constraint System"
+    echo "ACS v1.5 — Agent Constraint System"
     echo ""
     echo "Commands:"
     echo "  acs install [agent...]    Install constraint hooks for detected agents"

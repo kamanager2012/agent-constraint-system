@@ -48,7 +48,7 @@ ACS complements Codex CLI's existing safety mechanisms — sandboxing, approvals
 
 ## Current Status
 
-ACS v6.0 is functional and open-source (MIT license):
+ACS v1.5 is functional and open-source (MIT license):
 - 8 supported agent platforms
 - 105 adversarial benchmark scenarios
 - Production deployment on Claude Code (22 hook files)

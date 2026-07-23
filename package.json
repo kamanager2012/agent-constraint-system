@@ -1,6 +1,6 @@
 {
   "name": "agent-constraint-system",
-  "version": "6.1.0",
+  "version": "1.5.0",
   "description": "Cross-agent runtime safety layer for autonomous coding agents. Asset Ledger + Safe Mode + 3-level benchmark. Codex CLI / Claude Code / Gemini CLI / Cursor / Qoder / Hermes / OpenCode / CodeBuddy.",
   "keywords": ["ai", "agent", "constraint", "safety", "guard", "claude", "codex", "gemini", "cursor", "hook", "security", "benchmark", "asset-ledger"],
   "license": "MIT",
@@ -10,5 +10,5 @@
   "bin": { "acs": "./bin/acs" },
   "files": ["bin/", "acs_core/", "adapters/", "versions/v5.3/", "benchmarks/", "docs/", "application/", "LICENSE", "README.md", "README.zh-CN.md", "install.sh"],
   "engines": { "node": ">=18" },
-  "scripts": { "postinstall": "echo '[ACS v6.1] Run: acs install'" }
+  "scripts": { "postinstall": "echo '[ACS v1.5] Run: acs install'" }
 }
