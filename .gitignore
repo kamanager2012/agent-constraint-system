@@ -1,4 +1,11 @@
 # Agent Constraint System (ACS) — gitignore
+
+# Agent runtime directories (local state, not for distribution)
+.claude/
+.cursor/
+.gemini/
+.codex/
+
 # Python
 __pycache__/
 *.py[cod]
