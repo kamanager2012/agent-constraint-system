@@ -8,7 +8,7 @@
   "homepage": "https://github.com/kamanager2012/agent-constraint-system",
   "repository": "github:kamanager2012/agent-constraint-system",
   "bin": { "acs": "./bin/acs" },
-  "files": ["bin/", "acs_core/", "adapters/", "versions/v1.5.0/", "benchmarks/", "docs/", "application/", "LICENSE", "README.md", "README.zh-CN.md", "install.sh"],
+  "files": ["bin/", "acs_core/", "adapters/", "benchmarks/", "docs/", "application/", "LICENSE", "README.md", "README.zh-CN.md", "VERSION", "install.sh"],
   "engines": { "node": ">=18" },
   "scripts": { "postinstall": "echo '[ACS v1.5.0] Run: acs install'" }
 }

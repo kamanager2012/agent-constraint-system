@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-hacs.py — HACS v2.0 Hermes Agent Adapter
+hacs.py — Hermes Agent Adapter for Agent Constraint System (ACS)
 
 Hermes uses YAML-based hook configuration in ~/.hermes/config.yaml.
 pre_tool_call = PreToolUse, post_tool_call = PostToolUse.
@@ -92,7 +92,7 @@ def cli() -> None:
             print("[HACS] Full reset."); sys.exit(0)
         print("[HACS] Use --force."); sys.exit(0)
     elif cmd == "status":
-        print("[HACS v2.0] Status Report")
+        print("[ACS] Status Report")
         if not RUNTIME_DIR.exists():
             print("  NOT INITIALIZED (run init)"); sys.exit(0)
         v = load_violations(VIOLATIONS_FILE)

@@ -5,7 +5,8 @@
 set -e
 INSTALL_DIR="$HOME/.acs"
 
-echo "ACS v1.5.0 — Agent Constraint System"
+V=$(curl -fsSL https://raw.githubusercontent.com/kamanager2012/agent-constraint-system/main/VERSION 2>/dev/null || echo "?.?.?")
+echo "ACS v$V — Agent Constraint System"
 echo ""
 
 # Download from GitHub

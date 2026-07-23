@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-qacs.py — QACS v2.0 Qoder CN CLI Adapter
+qacs.py — Qoder CN CLI Adapter for Agent Constraint System (ACS)
 
 Qoder's hook system is nearly identical to Codex CLI. Same JSON stdin format,
 same exit codes (0=allow, 2=block). Paths: ~/.qoder-cn/ instead of ~/.codex/.
@@ -88,7 +88,7 @@ def cli() -> None:
             print("[QACS] Full reset."); sys.exit(0)
         print("[QACS] Use --force."); sys.exit(0)
     elif cmd == "status":
-        print("[QACS v2.0] Status Report")
+        print("[ACS] Status Report")
         if not RUNTIME_DIR.exists():
             print("  NOT INITIALIZED (run init)"); sys.exit(0)
         v = load_violations(VIOLATIONS_FILE)

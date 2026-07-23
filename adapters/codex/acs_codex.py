@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-acs_codex.py -- CACS v0.3.x Codex CLI Adapter
+acs_codex.py -- Codex CLI Adapter for Agent Constraint System (ACS)
 
 Production-grade constraint layer for Codex CLI with Asset Ledger
 and Post-Error Safe Mode support.
@@ -129,10 +129,10 @@ def cli() -> None:
         RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
         integrity_store(INTEGRITY_FILE, CRITICAL_FILES)
         ok, msg = integrity_verify(INTEGRITY_FILE)
-        print(f"[CACS v0.3.x] Initialized: {RUNTIME_DIR}")
-        print(f"[CACS v0.3.x] Integrity: {msg}")
-        print(f"[CACS v0.3.x] Asset Ledger: active ({ledger._storage_path})")
-        print(f"[CACS v0.3.x] Safe Mode: threshold={safe_mode.threshold} errors")
+        print(f"[ACS] Initialized: {RUNTIME_DIR}")
+        print(f"[ACS] Integrity: {msg}")
+        print(f"[ACS] Asset Ledger: active ({ledger._storage_path})")
+        print(f"[ACS] Safe Mode: threshold={safe_mode.threshold} errors")
         sys.exit(0)
 
     elif cmd == "unlock":
@@ -162,7 +162,7 @@ def cli() -> None:
         sys.exit(0)
 
     elif cmd == "status":
-        print("[CACS v0.3.x] Status Report")
+        print("[ACS] Status Report")
         if not RUNTIME_DIR.exists():
             print("  Status: NOT INITIALIZED (run init first)")
             sys.exit(0)

@@ -1,3 +1,4 @@
+# Agent Constraint System (ACS) — gitignore
 # Python
 __pycache__/
 *.py[cod]

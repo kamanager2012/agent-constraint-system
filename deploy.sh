@@ -8,7 +8,8 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")" && pwd)"
-SOURCE_DIR="$REPO_ROOT/versions/v1.5.0"
+ACS_VERSION=$(cat "$REPO_ROOT/VERSION" 2>/dev/null || echo "?.?.?")
+SOURCE_DIR="$REPO_ROOT/versions/v$ACS_VERSION"
 TARGET_DIR="$HOME/.claude/hooks"
 BACKUP_DIR="$REPO_ROOT/backups"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)

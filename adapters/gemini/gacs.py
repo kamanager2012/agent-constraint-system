@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-gacs.py — GACS v2.0 Gemini CLI Adapter
+gacs.py — Gemini CLI Adapter for Agent Constraint System (ACS)
 
 Production-grade constraint layer for Gemini CLI.
 Imports guard logic from acs_core/. Gemini's hook system is nearly identical
@@ -102,7 +102,7 @@ def cli() -> None:
             print("[GACS] Use --force to confirm.")
         sys.exit(0)
     elif cmd == "status":
-        print("[GACS v2.0] Status Report")
+        print("[ACS] Status Report")
         if not RUNTIME_DIR.exists():
             print("  NOT INITIALIZED (run init)")
             sys.exit(0)
