@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-token_budget.py v3.1 — Multi-tier Compaction Reminder (PostToolUse hook)
+token_budget.py v0.3.x — Multi-tier Compaction Reminder (PostToolUse hook)
 Tiers: 100k/150k/200k/300k/350k/400k/450k/500k/550k/600k
 Cooldown: 5min (warn tiers), 3min (urgent tiers)
 """

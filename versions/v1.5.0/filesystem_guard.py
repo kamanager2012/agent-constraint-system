@@ -210,7 +210,7 @@ def _check_write(data: dict) -> tuple:
 
 
 def _check_bash(data: dict) -> tuple:
-    """v3.1 语义分类: READ总是放行 / WRITE检查路径 / DESTROY拦截"""
+    """v0.3.x 语义分类: READ总是放行 / WRITE检查路径 / DESTROY拦截"""
     if data.get("tool_name") != "Bash":
         return False, ""
     cmd = data.get("tool_input", {}).get("command", "")

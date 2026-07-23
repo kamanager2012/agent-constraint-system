@@ -222,7 +222,7 @@ assert scope is not None                  # scope必须存在
 | 变更 | 文件 |
 |------|------|
 | DEFAULT_CONFIG 同步 v1.2.0 | hook_orchestrator.py |
-| 版本号 v4.0→v1.2.0 (29处用户可见输出) | acs_lite.py |
+| 版本号 v1.1.0→v1.2.0 (29处用户可见输出) | acs_lite.py |
 | python3 -c 研发模式降级为警告 | acs_lite.py |
 | 6个孤儿hook归档 | → archive/orphan-hooks-v1.2.0/ |
 | bash_guard 空壳恢复 | bash_guard.py |

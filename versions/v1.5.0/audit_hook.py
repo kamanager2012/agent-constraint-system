@@ -65,7 +65,7 @@ def main():
         dangerous = ["rm -rf", "rm -f", "kill -9", "mkfs", "dd if=", "chmod 777"]
         record["risk"] = "HIGH" if any(d in cmd for d in dangerous) else "LOW"
 
-    # 写入 append-only 日志 (v3.1: 自动轮换, 保留最近 1000 条)
+    # 写入 append-only 日志 (v0.3.x: 自动轮换, 保留最近 1000 条)
     try:
         os.makedirs(AUDIT_LOG.parent, exist_ok=True)
         current_lines = len(open(AUDIT_LOG).readlines()) if os.path.exists(AUDIT_LOG) else 0

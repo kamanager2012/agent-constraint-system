@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-export_graph.py — Structural Analyzer (v3.0)
+export_graph.py — Structural Analyzer (v0.3.x)
 自动扫描 TypeScript 源码，建立 symbol graph + Type Integrity 检测。
 
 用法:

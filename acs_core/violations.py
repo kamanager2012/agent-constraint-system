@@ -181,7 +181,7 @@ def integrity_store(
     """Store new integrity snapshot, compact if needed."""
     entries = _load(integrity_file, [])
     if isinstance(entries, dict):
-        entries = [{"_migrated_from": "v3.x", "_timestamp": entries.get("_timestamp", 0)}]
+        entries = [{"_migrated_from": "v0.3.x", "_timestamp": entries.get("_timestamp", 0)}]
     new_entry = integrity_snapshot(critical_files)
     new_entry["parent"] = entries[-1].get("entry_hash", "genesis") if entries else "genesis"
     new_entry["created_by"] = "terminal"

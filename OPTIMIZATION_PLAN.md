@@ -1,4 +1,4 @@
-# ACS v5.x 优化方案（核实修订版）
+# ACS v1.4.x 优化方案（核实修订版）
 
 > 基于 `~/.claude/hooks/` 部署代码 + `CLAUDE.md` 治理文档的逐条核实。原方案中几处结论与部署代码不符，已按核实结果修正。
 
@@ -13,8 +13,8 @@
 | `current` symlink | → `versions/v1.2.0` | 过期，部署代码已是 v5.x |
 | `versions/v1.2.0/` | v1.2.0 | 仅 8 个文件 |
 | 部署 `acs_lite.py` | v1.5.0 | ~1700 行 |
-| 部署 `hook_orchestrator.py` | v5.0 | 7.3KB |
-| 部署 `orchestrator_config.json` | v5.0 | 与 v1.2.0 源码差异巨大 |
+| 部署 `hook_orchestrator.py` | v1.4.0 | 7.3KB |
+| 部署 `orchestrator_config.json` | v1.4.0 | 与 v1.2.0 源码差异巨大 |
 
 说明：`known-bugs.md` 中有 v1.4.1-v1.4.3 (formerly v5.x) 的逐条修复记录，并非纯黑盒。真正缺失的是 **可复现的 v5.x 源码快照**（`versions/v5.x/` 目录不存在），不是完全没有变更记录。
 
@@ -144,7 +144,7 @@ if not isinstance(inp, dict):
 
 ```python
 def _safe_resolve(p: Path) -> Path:
-    """v4.0: 不跟随 symlink（避免 symlink 攻击），但保留绝对性。"""
+    """v1.1.0: 不跟随 symlink（避免 symlink 攻击），但保留绝对性。"""
     return p.resolve(strict=False)  # ← Python 官方文档明确：resolve() 无论 strict 与否都解析 symlink
 ```
 

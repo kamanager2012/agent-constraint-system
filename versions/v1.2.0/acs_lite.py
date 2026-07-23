@@ -9,7 +9,7 @@ v1.2.0 变更 (2026-06-05 控制流重构):
   Safety  3 行 assert (path escape / scope / chain)
   #3     研发模式下 python3 -c 降级为警告不拦截
 
-v4.0 修复总览:
+v1.1.0 修复总览:
   C-1  self-deadlock: SCOPE_BASELINE 白名单
   C-2  Read secret 泄露: read_guard.py 处理
   C-3  PROPOSAL 路径错位: 统一到 audit/proposals.jsonl
@@ -29,7 +29,7 @@ import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-# v4.0: 模块化拆分
+# v1.1.0: 模块化拆分
 from acs_paths import (
     resolve_zone, FileZone, ZONE_PERMISSIONS, is_mass_delete,
     PROJECT, RUNTIME_DIR, AUDIT_DIR, SHADOW_ROOT,
@@ -47,7 +47,7 @@ from acs_violations import (
 )
 from acs_structural import verify_structural_change, SUPPORTED_SUFFIXES
 
-# ── v4.0 Baseline: 无 scope 时仍可执行的只读命令（修 C-1 self-deadlock） ──
+# ── v1.1.0 Baseline: 无 scope 时仍可执行的只读命令（修 C-1 self-deadlock） ──
 SCOPE_BASELINE_COMMANDS = frozenset({
     # POSIX 标准只读命令
     "ls", "cat", "find", "grep", "head", "tail", "wc", "pwd", "echo",
@@ -60,7 +60,7 @@ SCOPE_BASELINE_COMMANDS = frozenset({
     "python", "python3", "node",  # 走 bash_baseline 二次过滤
 })
 
-# v4.0: 这些危险模式即使在 baseline 也禁止
+# v1.1.0: 这些危险模式即使在 baseline 也禁止
 BASELINE_DENY_PATTERNS = [
     (r">\s*\S+",                          "redirect (write attempt)"),
     (r"\|\s*(?:sh|bash)\b",                "pipe to shell"),
@@ -82,7 +82,7 @@ BASELINE_DENY_PATTERNS = [
 ]
 BASELINE_DENY_COMPILED = [(re.compile(p, re.I), desc) for p, desc in BASELINE_DENY_PATTERNS]
 
-# v4.0: secret 路径脱敏（修 C-2）
+# v1.1.0: secret 路径脱敏（修 C-2）
 SENSITIVE_PATH_PATTERNS = [
     r".*\.claude/settings\.json$",
     r".*\.claude/settings\.local\.json$",
@@ -91,7 +91,7 @@ SENSITIVE_PATH_PATTERNS = [
 ]
 SENSITIVE_PATH_COMPILED = [re.compile(p, re.I) for p in SENSITIVE_PATH_PATTERNS]
 
-# ── 危险 Bash 模式（合并 v3.2 self-protection + guard.py）─────────────────
+# ── 危险 Bash 模式（合并 v0.3.x self-protection + guard.py）─────────────────
 DANGEROUS_BASH: List[Tuple[str, str]] = [
     # ── DELETE: 文件/目录删除 (60') ──
     (r"(?:^|[|;&]\s*)rm\s+-[a-zA-Z]*[rf]\s+/(?:\s|$)",          "rm -rf /"),
@@ -259,7 +259,7 @@ def _active_task_write(
         "proposal_required": proposal_required,
         "updated_at": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
     }
-    # v4.0: 同步更新 SCOPE_FILE 避免状态分叉
+    # v1.1.0: 同步更新 SCOPE_FILE 避免状态分叉
     SCOPE_FILE.parent.mkdir(parents=True, exist_ok=True)
     with open(SCOPE_FILE, "w") as f:
         json.dump(doc, f, indent=2, ensure_ascii=False)
@@ -280,7 +280,7 @@ def _deny(reason: str) -> None:
     sys.exit(2)
 
 
-# v4.0 修: session memory/journal 反馈通道豁免
+# v1.1.0 修: session memory/journal 反馈通道豁免
 # 路径: ~/.claude/projects/<session>/(memory|journal)/...
 # 理由: 这是 Claude 的反馈通道，必须能写入；projects audit/governance 仍受 PROTECTED 保护
 SESSION_FEEDBACK_RE = re.compile(
@@ -292,7 +292,7 @@ def is_session_feedback(path_str: str) -> bool:
 
 
 def _gate_lock() -> None:
-    """v4.0 修复 H-2: 锁定时直接 deny。"""
+    """v1.1.0 修复 H-2: 锁定时直接 deny。"""
     if not LOCK_FILE.exists():
         return
     v = load_violations()
@@ -307,7 +307,7 @@ def _gate_lock() -> None:
 
 
 def _check_baseline_command(command: str) -> Optional[str]:
-    """v4.0 修 C-1: 无 scope 时检查是否是 baseline 只读命令。返回 deny 原因或 None。"""
+    """v1.1.0 修 C-1: 无 scope 时检查是否是 baseline 只读命令。返回 deny 原因或 None。"""
     # 先检查 baseline 永远禁止的模式
     for pattern, desc in BASELINE_DENY_COMPILED:
         if pattern.search(command):
@@ -342,7 +342,7 @@ def check_write(file_path: str, tool_name: str, tool_input: Dict) -> Dict:
 
     _gate_lock()
 
-    # 0. v4.0 反馈通道豁免: session memory/journal 必须能写入
+    # 0. v1.1.0 反馈通道豁免: session memory/journal 必须能写入
     if is_session_feedback(file_path):
         return {"allowed": True, "reason": "session_feedback"}
 
@@ -374,9 +374,9 @@ def check_write(file_path: str, tool_name: str, tool_input: Dict) -> Dict:
             _deny(f"locked after RUNTIME overwrite (window={w_score})")
         _deny(f"RUNTIME zone append-only — cannot overwrite {file_path} (window={w_score})")
 
-    # 3a. SCOPE 检查（v4.0 fail-closed）
+    # 3a. SCOPE 检查（v1.1.0 fail-closed）
     if not scope.get("task_id"):
-        # v4.0 修 C-1: 给出清晰的 init 指引
+        # v1.1.0 修 C-1: 给出清晰的 init 指引
         _deny(f"no scope initialized. Run: python3 acs_lite.py init <task_id> <dir1,dir2>")
 
     # 4. SHADOW WALL
@@ -425,7 +425,7 @@ def check_bash(command: str) -> Dict:
     _gate_lock()
     scope = _load_scope()
 
-    # v4.0 修 C-1: 无 scope 时尝试 baseline 白名单
+    # v1.1.0 修 C-1: 无 scope 时尝试 baseline 白名单
     if not scope.get("task_id"):
         deny_reason = _check_baseline_command(command)
         if deny_reason:
@@ -527,7 +527,7 @@ def _infer_proposal_from_path(file_path: str) -> bool:
 
 
 def _check_proposal(file_path: str, tool_input: Dict) -> bool:
-    """v4.0 修 C-3: PROPOSAL_FILE 路径已统一到 audit/proposals.jsonl"""
+    """v1.1.0 修 C-3: PROPOSAL_FILE 路径已统一到 audit/proposals.jsonl"""
     scope = _load_scope()
     if not scope.get("proposal_required", False):
         return True
@@ -560,7 +560,7 @@ def cmd_init(args: List[str]) -> None:
         print("usage: acs_lite.py init <task_id> <dir1,dir2,...> [--shadow] [--proposal] [blocked_cmd_regex,...]")
         sys.exit(1)
     task_id = args[0]
-    # v4.0 修 M-5: task_id 校验
+    # v1.1.0 修 M-5: task_id 校验
     if not re.match(r"^[a-zA-Z0-9_-]{1,64}$", task_id):
         print(f"[ACS v1.2.0] ERROR: task_id must match [a-zA-Z0-9_-]{{1,64}}, got: {task_id!r}")
         sys.exit(1)
@@ -692,7 +692,7 @@ def cmd_chain_verify() -> None:
 
 
 def cmd_integrity_store() -> None:
-    """v4.0 新增：手动 store baseline（部署后/文件替换后用）。"""
+    """v1.1.0 新增：手动 store baseline（部署后/文件替换后用）。"""
     snap = integrity_store()
     print(f"[ACS v1.2.0] baseline stored: {snap['snapshot_id'][:16]} (parent: {snap['parent']})")
 

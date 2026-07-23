@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-acs_violations.py — v4.0 滑动窗口 Violation 管理 (H-1, H-2, M-3)
+acs_violations.py — v1.1.0 滑动窗口 Violation 管理 (H-1, H-2, M-3)
 
-v3.2 缺陷修复:
+v0.3.x 缺陷修复:
   H-1  衰减无效（1h 后才衰减 10 分，但 2 次就达 100 lock）→
-       v4.0 改为滑动窗口：最近 N 个事件累积
+       v1.1.0 改为滑动窗口：最近 N 个事件累积
   H-2  LOCK 写入后不立即 deny（check 函数返回 allowed）→
-       v4.0 在 _gate_lock 中明确 deny
+       v1.1.0 在 _gate_lock 中明确 deny
   M-3  _load JSON 损坏时改名为 .bak 永久丢失数据 →
-       v4.0 保留原文件，备份为 .corrupt
+       v1.1.0 保留原文件，备份为 .corrupt
 """
 from __future__ import annotations
 
@@ -24,7 +24,7 @@ from acs_paths import (
     RUNTIME_DIR,
 )
 
-# ── v4.0 滑动窗口参数（替换 v3.2 magic numbers）──────────────────────────
+# ── v1.1.0 滑动窗口参数（替换 v0.3.x magic numbers）──────────────────────────
 WINDOW_SIZE: int = int(os.environ.get("ACS_WINDOW_SIZE", "10"))      # 最近 10 个事件
 WINDOW_THRESHOLD: int = int(os.environ.get("ACS_WINDOW_THRESHOLD", "80"))  # 累积 30 触发 lock
 WINDOW_DECAY_SECONDS: int = int(os.environ.get("ACS_DECAY_SECONDS", "600"))  # 10min
@@ -32,7 +32,7 @@ LOCK_DENY_SCORE: int = 150  # 总分达到 100 仍触发硬锁（兜底）
 
 
 # ═════════════════════════════════════════════════════════════════════════
-# 原子 IO（v4.0 修复 H-5: 损坏时不改名原文件）
+# 原子 IO（v1.1.0 修复 H-5: 损坏时不改名原文件）
 # ═════════════════════════════════════════════════════════════════════════
 
 def _save(path: Path, data: Any) -> bool:
@@ -59,14 +59,14 @@ def _save(path: Path, data: Any) -> bool:
 
 
 def _load(path: Path, default: Any) -> Any:
-    """v4.0: JSON 损坏时保留原文件，备份为 .corrupt。"""
+    """v1.1.0: JSON 损坏时保留原文件，备份为 .corrupt。"""
     if not path.exists():
         return default
     try:
         with open(path) as f:
             return json.load(f)
     except (json.JSONDecodeError, OSError):
-        # v4.0 修复 H-5: 备份为 .corrupt，不删原文件
+        # v1.1.0 修复 H-5: 备份为 .corrupt，不删原文件
         try:
             corrupt_path = path.with_suffix(path.suffix + ".corrupt")
             if not corrupt_path.exists():
@@ -85,7 +85,7 @@ def _unlink_safe(p: Path) -> None:
 
 
 # ═════════════════════════════════════════════════════════════════════════
-# 滑动窗口（v4.0 核心改进）
+# 滑动窗口（v1.1.0 核心改进）
 # ═════════════════════════════════════════════════════════════════════════
 
 def load_violations() -> Dict:
@@ -97,7 +97,7 @@ def save_violations(v: Dict) -> None:
 
 
 def _apply_window_decay(v: Dict) -> Dict:
-    """v4.0 滑动窗口: 超过 WINDOW_DECAY_SECONDS 的事件自动衰减移除。"""
+    """v1.1.0 滑动窗口: 超过 WINDOW_DECAY_SECONDS 的事件自动衰减移除。"""
     events = v.get("events", [])
     if not events:
         return v
@@ -113,7 +113,7 @@ def _apply_window_decay(v: Dict) -> Dict:
 
 
 def window_score(v: Dict) -> int:
-    """v4.0: 窗口内事件累计分。"""
+    """v1.1.0: 窗口内事件累计分。"""
     return sum(e.get("score", 0) for e in v.get("events", []))
 
 
@@ -123,7 +123,7 @@ def total_score(v: Dict) -> int:
 
 
 def should_lock(v: Dict) -> Tuple[bool, str]:
-    """v4.0 修复 H-2: 锁判断更精确，返回 (should_lock, reason)。"""
+    """v1.1.0 修复 H-2: 锁判断更精确，返回 (should_lock, reason)。"""
     v = _apply_window_decay(v)
     w_score = window_score(v)
     t_score = total_score(v)
@@ -138,7 +138,7 @@ def should_lock(v: Dict) -> Tuple[bool, str]:
 
 
 def add_violation(reason: str, score: int) -> Tuple[int, bool, str]:
-    """v4.0 修复 H-2: 返回 (window_score, locked, reason)。调用方必须根据 locked 决定是否 deny。"""
+    """v1.1.0 修复 H-2: 返回 (window_score, locked, reason)。调用方必须根据 locked 决定是否 deny。"""
     v = load_violations()
     v = _apply_window_decay(v)
     v.setdefault("events", []).append({
@@ -192,7 +192,7 @@ def clear_violations(reason: str = "manual_reset") -> None:
 
 
 # ═════════════════════════════════════════════════════════════════════════
-# 完整性链（v4.0 修复 M-6: 自指）
+# 完整性链（v1.1.0 修复 M-6: 自指）
 # ═════════════════════════════════════════════════════════════════════════
 
 import hashlib
@@ -245,14 +245,14 @@ def _compute_entry_hash(entry: Dict[str, Any]) -> str:
 
 
 def _migrate_chain_to_v41() -> bool:
-    """v1.1.0 H-8: 一次性迁移旧 chain (v3.2/v4.0 格式) 到 v1.1.0 格式。
+    """v1.1.0 H-8: 一次性迁移旧 chain (v0.3.x/v1.1.0 格式) 到 v1.1.0 格式。
 
     旧 chain: parent=snapshot_id, 无 entry_hash
     新 chain: parent=entry_hash, 有 entry_hash
 
     Returns: True if migration happened, False if already v1.1.0 or empty
 
-    v1.1.0 修订: 之前 v4.0 store 写过的新 entry (有 entry_hash 但 parent=snapshot_id)
+    v1.1.0 修订: 之前 v1.1.0 store 写过的新 entry (有 entry_hash 但 parent=snapshot_id)
     也会被重算，统一整链格式。
     """
     entries = _load(INTEGRITY_FILE, [])
@@ -320,7 +320,7 @@ def integrity_store() -> Dict[str, Any]:
     """Store new integrity snapshot; compact chain if above threshold."""
     entries = _load(INTEGRITY_FILE, [])
     if isinstance(entries, dict):
-        entries = [{"_migrated_from": "v3.x", "_timestamp": entries.get("_timestamp", 0)}]
+        entries = [{"_migrated_from": "v0.3.x", "_timestamp": entries.get("_timestamp", 0)}]
     new_entry = integrity_snapshot()
     new_entry["parent"] = entries[-1].get("entry_hash", "genesis") if entries else "genesis"
     new_entry["created_by"] = "terminal"
@@ -397,7 +397,7 @@ def integrity_chain_stats() -> Dict[str, Any]:
 
 
 def integrity_verify(skip_self: bool = True) -> Tuple[bool, List[str], List[str], List[str]]:
-    """v4.0: 验证最新 baseline vs 当前。返回 (ok, tampered, missing, new_files)。
+    """v1.1.0: 验证最新 baseline vs 当前。返回 (ok, tampered, missing, new_files)。
 
     skip_self=True (默认): 排除 INTEGRITY_FILE 自指（store 自身必然改它）。
     """
@@ -408,7 +408,7 @@ def integrity_verify(skip_self: bool = True) -> Tuple[bool, List[str], List[str]
     current = integrity_snapshot()
     tampered, missing, new_files = [], [], []
     skip = {"snapshot_id", "timestamp", "version", "parent", "created_by", "entry_hash"}
-    # v4.0 fix M-6: 自指排除。INTEGRITY_FILE 在 CRITICAL_FILES 中是用于审计 chain
+    # v1.1.0 fix M-6: 自指排除。INTEGRITY_FILE 在 CRITICAL_FILES 中是用于审计 chain
     # 完整性（不能被外部修改），但 store 自身必然修改它。verify 阶段必须豁免。
     if skip_self:
         skip.add(str(INTEGRITY_FILE))

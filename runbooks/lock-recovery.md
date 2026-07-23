@@ -134,7 +134,7 @@ python3 ~/.claude/hooks/acs_lite.py init my-task "src/engine/a.py" --proposal
 教训：任务开始前先列全要写的文件，一次性设好 scope
 ```
 
-## v5.1+ 保护范围（2026-07-13）
+## v1.5+ 保护范围（2026-07-13）
 
 ACS_SELF_PROTECT 现在保护以下路径（Write/Edit + Bash 双保护）：
 
@@ -159,7 +159,7 @@ import json
 from pathlib import Path
 from datetime import datetime, timezone
 task = {
-    "version": "5.1", "task": "my-task", "task_id": "my-task",
+    "version": "1.5", "task": "my-task", "task_id": "my-task",
     "status": "ACTIVE", "allowed_dirs": ["/path/to/dir1", "/path/to/dir2"],
     "allowed_files": [], "blocked_commands": [],
     "shadow_mode": False, "proposal_required": False,

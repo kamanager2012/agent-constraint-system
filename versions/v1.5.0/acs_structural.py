@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-acs_structural.py — v4.0 结构验证 + ABI 保护 (H-3, H-4, M-8)
+acs_structural.py — v1.1.0 结构验证 + ABI 保护 (H-3, H-4, M-8)
 
-v3.2 缺陷修复:
+v0.3.x 缺陷修复:
   H-3  Edit 错位 (old_string 不存在) 静默通过 →
-       v4.0 返回 ok=False 强制 fail-loud
+       v1.1.0 返回 ok=False 强制 fail-loud
   H-4  MultiEdit 部分应用无报告 →
-       v4.0 检查所有 edit 都命中，否则 deny
+       v1.1.0 检查所有 edit 都命中，否则 deny
   M-8  空文件行数返回 1 (count('\n')+1) →
-       v4.0 显式处理空字符串
+       v1.1.0 显式处理空字符串
 """
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ from acs_paths import is_abi_protected, resolve, _safe_resolve
 SHRINK_RATIO: float = 0.5
 SUPPORTED_SUFFIXES = (".ts", ".tsx", ".js", ".jsx", ".py", ".go", ".rs", ".swift", ".kt")
 
-# ── 结构计数正则（v4.0 修复 M-1: 排除注释/字符串干扰）─────────────────
+# ── 结构计数正则（v1.1.0 修复 M-1: 排除注释/字符串干扰）─────────────────
 # 匹配 "export" 但排除 // 开头和 /* */ 内部
 _EXPORT = re.compile(
     r"^\s*(?://[^\n]*\n\s*)?export\s+(?:default\s+)?(?:const|let|var|function|class|interface|type|enum|abstract)",
@@ -46,7 +46,7 @@ def _read_text_safe(p: Path) -> str:
 
 
 def count_structures(text: str) -> Dict[str, int]:
-    """v4.0 修复 M-8: 空字符串显式返回 0 行。"""
+    """v1.1.0 修复 M-8: 空字符串显式返回 0 行。"""
     if not text:
         return {"lines": 0, "exports": 0, "interfaces": 0,
                 "types": 0, "enums": 0, "classes": 0, "functions": 0}
@@ -62,7 +62,7 @@ def count_structures(text: str) -> Dict[str, int]:
 
 
 def predict_final_content(file_path: str, tool_name: str, tool_input: Dict) -> Tuple[Optional[str], str]:
-    """v4.0 修复 H-3, H-4: 返回 (predicted_content, status)。
+    """v1.1.0 修复 H-3, H-4: 返回 (predicted_content, status)。
     status: "ok" | "not_found" | "partial" | "no_prediction" """
     if tool_name == "Write":
         return tool_input.get("content", ""), "ok"
@@ -73,7 +73,7 @@ def predict_final_content(file_path: str, tool_name: str, tool_input: Dict) -> T
         if not old_s:
             return None, "no_prediction"
         if old_s not in current:
-            return None, "not_found"  # v4.0: 显式标记
+            return None, "not_found"  # v1.1.0: 显式标记
         return current.replace(old_s, new_s, 1), "ok"
     if tool_name == "MultiEdit":
         result = current
@@ -88,19 +88,19 @@ def predict_final_content(file_path: str, tool_name: str, tool_input: Dict) -> T
             else:
                 missing_edits.append(idx)
         if missing_edits:
-            return None, f"partial:missing_edits={missing_edits}"  # v4.0
+            return None, f"partial:missing_edits={missing_edits}"  # v1.1.0
         return result, "ok"
     return None, "no_prediction"
 
 
 def verify_structural_change(file_path: str, tool_name: str, tool_input: Dict) -> Dict:
-    """v4.0 修复 H-3, H-4: Edit/MultiEdit 命中失败显式返回。"""
+    """v1.1.0 修复 H-3, H-4: Edit/MultiEdit 命中失败显式返回。"""
     resolved = resolve(file_path)
     is_abi = is_abi_protected(file_path)
     current_text = _read_text_safe(resolved) if resolved.exists() else ""
     predicted, status = predict_final_content(file_path, tool_name, tool_input)
 
-    # v4.0 修复 H-3, H-4: 显式处理未命中
+    # v1.1.0 修复 H-3, H-4: 显式处理未命中
     if status != "ok":
         if status == "not_found":
             return {"ok": False, "checks": [("EDIT_NOT_FOUND",

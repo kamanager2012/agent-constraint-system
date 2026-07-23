@@ -1,4 +1,4 @@
-# ACS v5.0 — Agent Constraint System Architecture
+# ACS v1.4.0 — Agent Constraint System Architecture
 
 > 2026-06-06 | 单文件自包含 | 止血层 + Token Budget + Context Pruner 一体化
 
@@ -12,7 +12,7 @@ Claude Desktop
   │   └─ CLAUDE_CODE_EFFORT_LEVEL: balanced
   │
   ├─ PreToolUse hooks:
-  │   ├─ acs_lite.py          ← 唯一决策中心 (v5.0)
+  │   ├─ acs_lite.py          ← 唯一决策中心 (v1.4.0)
   │   │   ├─ scope check       — 目录白名单
   │   │   ├─ bash guard        — 28 种危险模式 (行为语义分类)
   │   │   ├─ proposal gate     — /proposal 审批流程
