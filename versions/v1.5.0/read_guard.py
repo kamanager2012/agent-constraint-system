@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-read_guard.py v4.2 — PreToolUse Hook: 拦截不必要的 Read + secret 文件访问
+read_guard.py v1.2.0 — PreToolUse Hook: 拦截不必要的 Read + secret 文件访问
 
-v4.1 修复 (C-2): SENSITIVE_FILE_PATTERNS / SYSTEM_SENSITIVE / CC_SETTINGS_DENY
-v4.2 P2-7 修复: settings.json 在研发模式下允许读取（改为警告而非硬拦截）
+v1.1.0 修复 (C-2): SENSITIVE_FILE_PATTERNS / SYSTEM_SENSITIVE / CC_SETTINGS_DENY
+v1.2.0 P2-7 修复: settings.json 在研发模式下允许读取（改为警告而非硬拦截）
   - 研发模式（MODE=ACTIVE/RESEARCH）→ 允许 read + 警告
   - 非研发模式 → 拒绝、建议使用 grep 特定 key 替代
 """
@@ -34,7 +34,7 @@ ALLOWED_PREFIXES = [
     "package.json",
     "tsconfig.json",
     "vitest.config.ts",
-    # v4.2: 高考项目 Review mode 白名单
+    # v1.2.0: 高考项目 Review mode 白名单
     "/home/jamesoldman/my-project/projects/gaokao/",
     # v4.3: mystic-platform（玄学项目，Claude 负责）白名单
     "/home/jamesoldman/mystic-platform/",
@@ -44,7 +44,7 @@ ALLOWED_PREFIXES = [
 
 BLOCKED_EXTENSIONS = {".ts", ".tsx", ".py", ".js", ".jsx"}
 
-# ── v4.1 敏感文件绝对 deny (C-2) ────────────────────────────
+# ── v1.1.0 敏感文件绝对 deny (C-2) ────────────────────────────
 SENSITIVE_FILE_PATTERNS = [
     re.compile(r".*\.env$", re.I),
     re.compile(r".*\.env\..+$", re.I),
@@ -75,7 +75,7 @@ CC_SETTINGS_ALLOWED = [
     re.compile(r".*/\.claude/settings\.example\.json$", re.I),
 ]
 
-# v4.2 P2-7: 研发模式允许读取的 MODE 值
+# v1.2.0 P2-7: 研发模式允许读取的 MODE 值
 RESEARCH_MODES = {"ACTIVE", "RESEARCH"}
 
 
@@ -123,7 +123,7 @@ def main():
     if sensitive:
         kind, reason = sensitive
 
-        # v4.2 P2-7: settings.json 在研发模式下允许读取（只警告）
+        # v1.2.0 P2-7: settings.json 在研发模式下允许读取（只警告）
         if kind == "cc_secret":
             mode = _current_mode()
             if mode in RESEARCH_MODES:

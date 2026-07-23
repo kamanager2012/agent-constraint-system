@@ -1,6 +1,6 @@
-# ACS v4.2 系统完整分析报告
+# ACS v1.2.0 系统完整分析报告
 
-**日期**: 2026-06-05 | **版本**: v4.2 | **状态**: 生产就绪
+**日期**: 2026-06-05 | **版本**: v1.2.0 | **状态**: 生产就绪
 
 ---
 
@@ -12,7 +12,7 @@ ACS (Agent Constraint System) 是零信任 AI 工程运行时治理层。假设 
 
 ```
 Claude Code 请求
-  → hook_orchestrator.py (v4.2 统一调度)
+  → hook_orchestrator.py (v1.2.0 统一调度)
     PreToolUse:
       Write|Edit → acs_lite.py → filesystem_guard.py
       Bash      → acs_lite.py → sed_guard.py → filesystem_guard.py
@@ -27,7 +27,7 @@ Claude Code 请求
 
 ### 控制流设计原则
 
-| 原则 | v4.1 | v4.2 |
+| 原则 | v1.1.0 | v1.2.0 |
 |------|------|------|
 | 决策中心 | proposal_guard + acs_lite 双门 | **acs_lite 唯一决策中心** |
 | PreToolUse 语义 | proposal_guard 做 PostToolUse 的事 | 无状态过滤 |
@@ -60,7 +60,7 @@ Claude Code 请求
 | `agent_memory.py` | ~530 | Agent 记忆: 追踪读取文件用于上下文管理 | Post Read |
 | `bash_guard.py` | ~3 | 空壳: exit(0), 消除 orchestrator 噪音 | — |
 
-### 2.2 已归档 (→ archive/orphan-hooks-v4.2/)
+### 2.2 已归档 (→ archive/orphan-hooks-v1.2.0/)
 
 | 文件 | 原行数 | 归档原因 |
 |------|--------|----------|
@@ -147,7 +147,7 @@ WINDOW_DECAY=600s   10分钟后事件衰减
 | SOURCE | 其他所有路径 | ✅ | ❌ | ✅ |
 | SYSTEM | hooks/, settings, governance | ❌ | ❌ | ❌ |
 
-v4.2 变更: audit/ 从 SYSTEM → RUNTIME (P1-4)
+v1.2.0 变更: audit/ 从 SYSTEM → RUNTIME (P1-4)
 
 ### 4.3 Integrity Chain (完整性链)
 
@@ -172,11 +172,11 @@ clear_violations():
 ### 4.4 Proposal Gate
 
 ```
-v4.1:
+v1.1.0:
   proposal_guard 在 PreToolUse → 控制流错位
   (PreToolUse 做 PostToolUse 的事)
 
-v4.2:
+v1.2.0:
   acs_lite 为唯一决策中心:
     needs_proposal = scope.proposal_required OR _infer_from_path()
     _infer_from_path(): open-world 白名单
@@ -190,7 +190,7 @@ v4.2:
 
 ---
 
-## 5. v4.2 变更清单
+## 5. v1.2.0 变更清单
 
 ### P0 控制流重构
 
@@ -221,10 +221,10 @@ assert scope is not None                  # scope必须存在
 
 | 变更 | 文件 |
 |------|------|
-| DEFAULT_CONFIG 同步 v4.2 | hook_orchestrator.py |
-| 版本号 v4.0→v4.2 (29处用户可见输出) | acs_lite.py |
+| DEFAULT_CONFIG 同步 v1.2.0 | hook_orchestrator.py |
+| 版本号 v4.0→v1.2.0 (29处用户可见输出) | acs_lite.py |
 | python3 -c 研发模式降级为警告 | acs_lite.py |
-| 6个孤儿hook归档 | → archive/orphan-hooks-v4.2/ |
+| 6个孤儿hook归档 | → archive/orphan-hooks-v1.2.0/ |
 | bash_guard 空壳恢复 | bash_guard.py |
 | settings.json 旧hook引用清理 (authority_invariant, shadow_workspace) | settings.json |
 | 文档更新 (CHANGELOG/NEXT_TASK/CURRENT_STATE/PROJECT) | agent-constraint-system/ |
@@ -248,7 +248,7 @@ assert scope is not None                  # scope必须存在
 ## 7. 当前运行状态
 
 ```
-ACS v4.2
+ACS v1.2.0
 ├── Task:       acs-fix
 ├── Scope:      4 dirs (hooks, runtime, acs-project, gaokao-state)
 ├── Shadow:     off
@@ -278,12 +278,12 @@ ACS v4.2
 
 | 项 | 值 |
 |------|-----|
-| 版本 | v4.2 |
+| 版本 | v1.2.0 |
 | 部署日期 | 2026-06-05 |
 | 活跃 hook 文件 | 17 |
 | 归档文件 | 6 |
-| 代码快照 | `~/agent-constraint-system/versions/v4.2/` (8文件) |
-| 版本 symlink | `current → versions/v4.2` |
+| 代码快照 | `~/agent-constraint-system/versions/v1.2.0/` (8文件) |
+| 版本 symlink | `current → versions/v1.2.0` |
 | Integrity chain | 6 entries |
 | CRITICAL_FILES | 15 |
 | Baseline commands | 38 |
@@ -293,4 +293,4 @@ ACS v4.2
 
 ---
 
-*ACS v4.2 生产就绪。报告结束。*
+*ACS v1.2.0 生产就绪。报告结束。*

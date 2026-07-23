@@ -491,7 +491,7 @@ def main():
 
 
 # ═════════════════════════════════════════════════════════════════════════
-# v4.1: Hook 适配 (PreToolUse Read stdin 协议)
+# v1.1.0: Hook 适配 (PreToolUse Read stdin 协议)
 # ═════════════════════════════════════════════════════════════════════════
 
 def main_stdin() -> None:
@@ -520,7 +520,7 @@ def main_stdin() -> None:
 
 
 if __name__ == "__main__":
-    # v4.1: 自动检测 stdin 模式 (hook) vs argv 模式 (CLI)
+    # v1.1.0: 自动检测 stdin 模式 (hook) vs argv 模式 (CLI)
     try:
         if not sys.stdin.isatty():
             main_stdin()

@@ -193,7 +193,7 @@ COMPILED_BASH: List[Tuple[re.Pattern, str]] = [
     (re.compile(p, re.I), desc) for p, desc in DANGEROUS_BASH
 ]
 
-# 行为分类映射表 — v5.0 唯一正规定义 (消除 v4.2 的重复 bug) ──
+# 行为分类映射表 — v5.0 唯一正规定义 (消除 v1.2.0 的重复 bug) ──
 CATEGORY_MAP: Dict[str, str] = {
     # DELETE
     "rm -rf /":              "DELETE",  "rm -rf *":         "DELETE",
@@ -232,7 +232,7 @@ CATEGORY_SCORES: Dict[str, int] = {
 }
 DEFAULT_CATEGORY = "WRITE"  # 未匹配 → WRITE 级
 
-# v4.2 safety: session feedback 豁免
+# v1.2.0 safety: session feedback 豁免
 SESSION_FEEDBACK_RE = re.compile(
     r".*/\.claude/projects/[^/]+/(memory|journal)(/.*)?$"
 )

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-read_guard.py v4.2 — PreToolUse Hook: 拦截 secret 文件访问
+read_guard.py v1.2.0 — PreToolUse Hook: 拦截 secret 文件访问
 
-v4.1 修复 (C-2): SENSITIVE_FILE_PATTERNS / SYSTEM_SENSITIVE / CC_SETTINGS_DENY
-v4.2 P2-7 修复: settings.json 在研发模式下允许读取（改为警告而非硬拦截）
-v4.2+: 移除 BLOCKED_EXTENSIONS（.ts/.py/.js 等源文件拦截），不再做 token 优化
+v1.1.0 修复 (C-2): SENSITIVE_FILE_PATTERNS / SYSTEM_SENSITIVE / CC_SETTINGS_DENY
+v1.2.0 P2-7 修复: settings.json 在研发模式下允许读取（改为警告而非硬拦截）
+v1.2.0+: 移除 BLOCKED_EXTENSIONS（.ts/.py/.js 等源文件拦截），不再做 token 优化
 """
 
 import json
@@ -26,11 +26,11 @@ ALLOWED_PREFIXES = [
     "package.json",
     "tsconfig.json",
     "vitest.config.ts",
-    # v4.2: 高考项目 Review mode 白名单
+    # v1.2.0: 高考项目 Review mode 白名单
     "/home/jamesoldman/my-project/projects/gaokao/",
 ]
 
-# ── v4.1 敏感文件绝对 deny (C-2) ────────────────────────────
+# ── v1.1.0 敏感文件绝对 deny (C-2) ────────────────────────────
 SENSITIVE_FILE_PATTERNS = [
     re.compile(r".*\.env$", re.I),
     re.compile(r".*\.env\..+$", re.I),
@@ -61,7 +61,7 @@ CC_SETTINGS_ALLOWED = [
     re.compile(r".*/\.claude/settings\.example\.json$", re.I),
 ]
 
-# v4.2 P2-7: 研发模式允许读取的 MODE 值
+# v1.2.0 P2-7: 研发模式允许读取的 MODE 值
 RESEARCH_MODES = {"ACTIVE", "RESEARCH"}
 
 
@@ -109,7 +109,7 @@ def main():
     if sensitive:
         kind, reason = sensitive
 
-        # v4.2 P2-7: settings.json 在研发模式下允许读取（只警告）
+        # v1.2.0 P2-7: settings.json 在研发模式下允许读取（只警告）
         if kind == "cc_secret":
             mode = _current_mode()
             if mode in RESEARCH_MODES:

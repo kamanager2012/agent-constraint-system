@@ -2,7 +2,7 @@
 
 Agent 不信任。所有 Write / Edit / Bash 必须经过治理层。
 
-## 当前版本：v4.2
+## 当前版本：v1.2.0
 
 | 组件 | 位置 |
 |------|------|
@@ -27,7 +27,7 @@ context/NEXT_TASK.md
 ├── PROJECT.md
 ├── ARCHITECTURE.md
 ├── CHANGELOG.md
-├── current → versions/v4.1
+├── current → versions/v1.1.0
 ├── hooks → ~/.claude/hooks
 ├── runtime → ~/.claude/runtime
 │

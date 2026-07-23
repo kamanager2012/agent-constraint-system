@@ -44,7 +44,7 @@ def _resolve_project_root() -> Path:
         if p.is_dir():
             return p
     # 启发式：向上找包含 .claude/ 的祖先
-    # v4.1 fix: 跳过 SCRIPT_DIR 自身（.claude/hooks/.claude 误目录存在会导致误命中）
+    # v1.1.0 fix: 跳过 SCRIPT_DIR 自身（.claude/hooks/.claude 误目录存在会导致误命中）
     cwd = Path(os.getcwd()).resolve()
     for ancestor in [cwd, *cwd.parents]:
         if ancestor == SCRIPT_DIR:
@@ -118,13 +118,13 @@ CRITICAL_FILES: List[Path] = [
     HOOKS_DIR / "acs_lite.py", HOOKS_DIR / "acs_paths.py",
     HOOKS_DIR / "acs_violations.py", HOOKS_DIR / "acs_structural.py",
     HOOKS_DIR / "acs_task.sh",
-    # v4.1 新加的 hook (被篡改会破坏 secret 拦截 / deny 报告)
+    # v1.1.0 新加的 hook (被篡改会破坏 secret 拦截 / deny 报告)
     HOOKS_DIR / "read_guard.py",
     HOOKS_DIR / "agent_memory.py",
     HOOKS_DIR / "runtime_loop.py",
     HOOKS_DIR / "hook_orchestrator.py",
     HOOKS_DIR / "orchestrator_config.json",
-    # v4.2 修复的 risk_engine
+    # v1.2.0 修复的 risk_engine
     HOOKS_DIR / "risk_engine.py",
     # 完整性 + 运行时状态 (自指)
     INTEGRITY_FILE,
@@ -236,7 +236,7 @@ def is_abi_protected(file_path: str) -> bool:
 
 def is_in_scope(resolved: Path, scope: dict) -> bool:
     """v4.0 保持 v3.2 的 fail-closed 语义。
-    v4.1 fix: 锚定到 PROJECT 而非 cwd（避免 .claude/hooks/.claude 误目录污染）。"""
+    v1.1.0 fix: 锚定到 PROJECT 而非 cwd（避免 .claude/hooks/.claude 误目录污染）。"""
     allowed = scope.get("allowed_files", scope.get("allowed_dirs", []))
     if not allowed:
         return False

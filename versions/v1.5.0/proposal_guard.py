@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-proposal_guard.py — v4.2 PostToolUse Hook (P0-1/P0-3 修复)
+proposal_guard.py — v1.2.0 PostToolUse Hook (P0-1/P0-3 修复)
 
-v4.1 问题:
+v1.1.0 问题:
   - 注册在 PreToolUse 但代码是 PostToolUse 语义 → 控制流错位
   - 白名单是 closed-world (枚举路径前缀) → 正常路径被误判
   - path traversal 风险 (../../etc/ 可绕过前缀匹配)
 
-v4.2 修复:
+v1.2.0 修复:
   - 移至 PostToolUse（纯审计，exit 0 不拦截）
   - acs_lite.py 是唯一 PreToolUse 决策中心（含 proposal gate）
   - 白名单改为 open-world: prefix-based + is_relative_to 防遍历
@@ -15,6 +15,13 @@ v4.2 修复:
 
 exit 0 = allow (PostToolUse 永远 allow, 只记录审计)
 """
+
+# Cursor Agent auto-imports Claude hooks from ~/.claude/settings*.json.
+# ACS/ORCH is Claude-only — never gate Cursor sessions.
+_e = __import__("os").environ
+# Cursor Agent injects CURSOR_PROJECT_DIR / CURSOR_VERSION into hook env (not CURSOR_AGENT).
+if _e.get("CURSOR_PROJECT_DIR") or _e.get("CURSOR_VERSION") or _e.get("CURSOR_AGENT"):
+    raise SystemExit(0)
 
 import json
 import os
@@ -26,7 +33,7 @@ HOME = Path.home().resolve()
 CWD = Path(os.environ.get("CLAUDE_CWD", os.getcwd())).resolve()
 PROPOSAL_LOG = CWD / ".claude" / "audit" / "proposals.jsonl"
 
-# v4.2 P0-3: open-world allowed paths (prefix-based, is_relative_to 防遍历)
+# v1.2.0 P0-3: open-world allowed paths (prefix-based, is_relative_to 防遍历)
 ALLOWED_PREFIXES: list[Path] = [
     HOME / ".claude" / "runtime",
     HOME / ".claude" / "audit",
@@ -43,8 +50,8 @@ ALLOWED_PREFIXES: list[Path] = [
 def _is_allowed_path(file_path: str) -> bool:
     """Open-world 白名单: prefix-based + is_relative_to 防遍历。
 
-    v4.1 Bug: closed-world 枚举前缀 → 新路径被误判
-    v4.2 Fix:  用 is_relative_to 替代 startswith, 阻止 /tmp/../../etc/ 绕过
+    v1.1.0 Bug: closed-world 枚举前缀 → 新路径被误判
+    v1.2.0 Fix:  用 is_relative_to 替代 startswith, 阻止 /tmp/../../etc/ 绕过
     """
     try:
         resolved = Path(file_path).resolve()
@@ -65,7 +72,7 @@ def _is_allowed_path(file_path: str) -> bool:
 
 
 def _needs_proposal(file_path: str) -> bool:
-    """v4.2: 不在白名单 → 需要 proposal（但 PostToolUse 只警告不拦截）。"""
+    """v1.2.0: 不在白名单 → 需要 proposal（但 PostToolUse 只警告不拦截）。"""
     return not _is_allowed_path(file_path)
 
 
@@ -119,7 +126,7 @@ def main():
     if _has_proposal(file_path):
         sys.exit(0)
 
-    # v4.2: PostToolUse 纯审计 — 不拦截，只记录
+    # v1.2.0: PostToolUse 纯审计 — 不拦截，只记录
     print(f"[PROPOSAL GUARD] 写文件未检测到 Proposal: {file_path}", file=sys.stderr)
 
     # 记录违规审计

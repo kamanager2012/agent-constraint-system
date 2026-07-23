@@ -15,4 +15,4 @@
 
 ## 变更历史
 - 2026-07-13: v1.4.1-v1.4.3 (formerly v5.1-v5.3) — 完整 runtime/ 保护 + 配置文件保护 + scope 统一
-- 2026-06-03: v1.2.0 (formerly v4.2) — 修复 clear_violations
+- 2026-06-03: v1.2.0 (formerly v1.2.0) — 修复 clear_violations

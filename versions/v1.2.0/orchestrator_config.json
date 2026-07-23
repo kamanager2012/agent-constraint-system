@@ -1,5 +1,5 @@
 {
-  "_comment": "v4.2 hook orchestrator 配置。P0-1: proposal_guard 从 PreToolUse 移到 PostToolUse（审计不拦截）",
+  "_comment": "v1.2.0 hook orchestrator 配置。P0-1: proposal_guard 从 PreToolUse 移到 PostToolUse（审计不拦截）",
   "_default_behavior": "missing hook → allow + warning; timeout → allow + warning",
   "PreToolUse": {
     "Write|Edit": [

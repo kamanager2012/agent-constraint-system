@@ -1,4 +1,4 @@
-# 下一步 — ACS v4.2+
+# 下一步 — ACS v1.2.0+
 
 ## 已完成 (2026-06-05)
 
@@ -14,7 +14,7 @@
 ## 待做 — P2 改进
 
 1. **版本升级脚本** — `upgrade.sh` 自动创建新版本目录 + 切 symlink
-2. **代码正式迁入版本目录** — `~/.claude/hooks/` → `v4.2/hooks/`
+2. **代码正式迁入版本目录** — `~/.claude/hooks/` → `v1.2.0/hooks/`
 3. **孤儿 hook 清理** — 22 个 .py 中许多未注册到 orchestrator，增加认知负担
 4. **hooks.json 62KB 遗留清理** — 与 orchestrator_config.json 功能重叠
 5. **bash_guard.py 24字节空壳** — 移除或合并到 guard.py

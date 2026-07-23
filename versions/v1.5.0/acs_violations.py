@@ -37,6 +37,7 @@ LOCK_DENY_SCORE: int = 150  # 总分达到 100 仍触发硬锁（兜底）
 
 def _save(path: Path, data: Any) -> bool:
     """原子写入：tmp + rename。失败时保留原文件不破坏。"""
+    tmp_path = None
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
         fd, tmp_path = tempfile.mkstemp(dir=path.parent, prefix=".tmp_", suffix=".json")
@@ -45,14 +46,16 @@ def _save(path: Path, data: Any) -> bool:
                 json.dump(data, f, indent=2, ensure_ascii=False)
             os.replace(tmp_path, path)
             return True
-        except (OSError, PermissionError) as e:
+        except (OSError, PermissionError):
+            return False
+    except Exception:
+        return False
+    finally:
+        if tmp_path:
             try:
                 os.unlink(tmp_path)
             except OSError:
                 pass
-            return False
-    except Exception:
-        return False
 
 
 def _load(path: Path, default: Any) -> Any:
@@ -158,12 +161,12 @@ def add_violation(reason: str, score: int) -> Tuple[int, bool, str]:
 
 
 def clear_violations(reason: str = "manual_reset") -> None:
-    """v4.2 P0-2: 真正重置 — 清空 events、重置 score、重建 baseline。
+    """v1.2.0 P0-2: 真正重置 — 清空 events、重置 score、重建 baseline。
 
     旧版只追加负分抵消（state desync）：
       v["events"].append({"score": -old, ...})  ← 半重置
 
-    v4.2 做法：
+    v1.2.0 做法：
       1. events = []            ← 真清空
       2. 新 genesis baseline     ← chain 无断裂
       3. unlock                 ← 不残留 lock
@@ -173,7 +176,7 @@ def clear_violations(reason: str = "manual_reset") -> None:
     v["window_score"] = 0
     save_violations(v)
 
-    # v4.2: 重建 baseline — 写一个 genesis entry 作为新 chain 起点
+    # v1.2.0: 重建 baseline — 写一个 genesis entry 作为新 chain 起点
     # 这样 audit replay 不会出现 hash gap
     genesis_entry = integrity_snapshot()
     genesis_entry["parent"] = "genesis"
@@ -221,7 +224,7 @@ def integrity_snapshot() -> Dict[str, Any]:
 
 
 def _compute_entry_hash(entry: Dict[str, Any]) -> str:
-    """v4.1 H-8: 计算单个 entry 的 chain hash。
+    """v1.1.0 H-8: 计算单个 entry 的 chain hash。
 
     Hash 包含: snapshot_id + timestamp + sorted(file_hashes) + parent_hash。
     任何 entry 内容变化 → 该 entry hash 不匹配 → 它作为 parent 的下一 entry 也断裂。
@@ -242,14 +245,14 @@ def _compute_entry_hash(entry: Dict[str, Any]) -> str:
 
 
 def _migrate_chain_to_v41() -> bool:
-    """v4.1 H-8: 一次性迁移旧 chain (v3.2/v4.0 格式) 到 v4.1 格式。
+    """v1.1.0 H-8: 一次性迁移旧 chain (v3.2/v4.0 格式) 到 v1.1.0 格式。
 
     旧 chain: parent=snapshot_id, 无 entry_hash
     新 chain: parent=entry_hash, 有 entry_hash
 
-    Returns: True if migration happened, False if already v4.1 or empty
+    Returns: True if migration happened, False if already v1.1.0 or empty
 
-    v4.1 修订: 之前 v4.0 store 写过的新 entry (有 entry_hash 但 parent=snapshot_id)
+    v1.1.0 修订: 之前 v4.0 store 写过的新 entry (有 entry_hash 但 parent=snapshot_id)
     也会被重算，统一整链格式。
     """
     entries = _load(INTEGRITY_FILE, [])
@@ -279,11 +282,42 @@ def _migrate_chain_to_v41() -> bool:
     return True
 
 
+MAX_CHAIN_ENTRIES = 1000
+COMPACTION_KEEP = 500
+
+
+def _compact_chain(entries: List[Dict[str, Any]], keep: int) -> List[Dict[str, Any]]:
+    """Compact oldest entries into a single bridge entry, recompute chain hashes."""
+    compact_count = len(entries) - keep
+    if compact_count <= 0:
+        return entries
+
+    pruned = entries[:compact_count]
+
+    compact_entry: Dict[str, Any] = {
+        "snapshot_id": f"compacted-{compact_count}-entries",
+        "timestamp": time.time(),
+        "created_by": "compactor",
+        "parent": pruned[0].get("parent", "genesis"),
+        "_compacted": True,
+        "_compacted_count": compact_count,
+        "_first_timestamp": pruned[0].get("timestamp", 0),
+        "_last_timestamp": pruned[-1].get("timestamp", 0),
+        "_compacted_hash": pruned[-1].get("entry_hash", ""),
+    }
+    compact_entry["entry_hash"] = _compute_entry_hash(compact_entry)
+
+    result = [compact_entry]
+    for entry in entries[compact_count:]:
+        entry["parent"] = result[-1]["entry_hash"]
+        entry["entry_hash"] = _compute_entry_hash(entry)
+        result.append(entry)
+
+    return result
+
+
 def integrity_store() -> Dict[str, Any]:
-    """v4.1 H-8: 不截断, 保留所有 entries, 加 chain hash。
-    每个 entry 包含 entry_hash = sha256(content + parent_hash)。
-    任何 entry 篡改会破坏整个 chain (rolling hash chain 性质)。
-    """
+    """Store new integrity snapshot; compact chain if above threshold."""
     entries = _load(INTEGRITY_FILE, [])
     if isinstance(entries, dict):
         entries = [{"_migrated_from": "v3.x", "_timestamp": entries.get("_timestamp", 0)}]
@@ -292,13 +326,16 @@ def integrity_store() -> Dict[str, Any]:
     new_entry["created_by"] = "terminal"
     new_entry["entry_hash"] = _compute_entry_hash(new_entry)
     entries.append(new_entry)
-    # v4.1 H-8: 保留所有 entries (不截断)。文件增长 O(n)，n=1000 时 ~1MB，可接受
+
+    if len(entries) > MAX_CHAIN_ENTRIES:
+        entries = _compact_chain(entries, keep=COMPACTION_KEEP)
+
     _save(INTEGRITY_FILE, entries)
     return new_entry
 
 
 def integrity_chain_verify() -> Tuple[bool, List[Dict[str, Any]]]:
-    """v4.1 H-8: 验证整个 chain 完整性。
+    """v1.1.0 H-8: 验证整个 chain 完整性。
 
     Returns: (ok, broken_entries)
     ok=True 表示 chain 完整
@@ -341,7 +378,7 @@ def integrity_chain_verify() -> Tuple[bool, List[Dict[str, Any]]]:
 
 
 def integrity_chain_stats() -> Dict[str, Any]:
-    """v4.1 H-8: chain 统计信息。"""
+    """v1.1.0 H-8: chain 统计信息。"""
     _migrate_chain_to_v41()
     entries = _load(INTEGRITY_FILE, [])
     if isinstance(entries, dict) or not entries:

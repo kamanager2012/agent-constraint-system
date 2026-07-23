@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-acs_lite.py — ACS v4.2 主入口
+acs_lite.py — ACS v1.2.0 主入口
 
-v4.2 变更 (2026-06-05 控制流重构):
+v1.2.0 变更 (2026-06-05 控制流重构):
   P0-1   proposal_guard 移至 PostToolUse，acs_lite 为唯一 PreToolUse 决策中心
   P0-1b  proposal gate 加 _infer_from_path fallback (open-world 模型)
   P0-2   clear_violations 真重置 (events=[] + genesis baseline)
@@ -268,12 +268,12 @@ def _active_task_write(
 
 
 def _deny(reason: str) -> None:
-    """v4.2 统一 deny 出口。"""
+    """v1.2.0 统一 deny 出口。"""
     payload = json.dumps({
         "hookSpecificOutput": {
             "hookEventName": "PreToolUse",
             "permissionDecision": "deny",
-            "permissionDecisionReason": f"[ACS v4.2] BLOCKED: {reason}",
+            "permissionDecisionReason": f"[ACS v1.2.0] BLOCKED: {reason}",
         }
     })
     sys.stderr.write(payload + "\n")
@@ -386,7 +386,7 @@ def check_write(file_path: str, tool_name: str, tool_input: Dict) -> Dict:
             _deny(f"locked after shadow violation (window={w_score})")
         _deny(f"shadow mode active — write to {SHADOW_ROOT}")
 
-    # 5. PROPOSAL GATE (v4.2: acs_lite 是唯一决策中心, proposal_guard 已移至 PostToolUse 纯审计)
+    # 5. PROPOSAL GATE (v1.2.0: acs_lite 是唯一决策中心, proposal_guard 已移至 PostToolUse 纯审计)
     # scope.proposal_required 显式控制 + infer_from_path 路径推断 fallback
     needs_proposal = scope.get("proposal_required", False) or _infer_proposal_from_path(file_path)
     if needs_proposal and not _check_proposal(file_path, tool_input):
@@ -402,11 +402,11 @@ def check_write(file_path: str, tool_name: str, tool_input: Dict) -> Dict:
             _deny(f"locked after out_of_scope (window={w_score})")
         _deny(f"outside scope — {file_path} (window={w_score})")
 
-    # v4.2 safety asserts — 状态一致性检查，不阻止正常流程
+    # v1.2.0 safety asserts — 状态一致性检查，不阻止正常流程
     HOME = Path.home().resolve()
     assert resolved.is_relative_to(HOME) or resolved.is_relative_to(Path("/tmp")), \
-        f"[ACS v4.2] path escape detected: {resolved}"
-    assert scope is not None, "[ACS v4.2] scope must exist at this point"
+        f"[ACS v1.2.0] path escape detected: {resolved}"
+    assert scope is not None, "[ACS v1.2.0] scope must exist at this point"
 
     # 7. STRUCTURAL VERIFIER
     if resolved.exists() and resolved.suffix in SUPPORTED_SUFFIXES:
@@ -437,7 +437,7 @@ def check_bash(command: str) -> Dict:
         # baseline 通过 → 放行
         return {"allowed": True, "reason": "baseline_only"}
 
-    # v4.2 #3: 研发模式下 EXEC 类别降级为警告不拦截
+    # v1.2.0 #3: 研发模式下 EXEC 类别降级为警告不拦截
     # python3 -c / node -e 等内联解释器在研发模式 (ACTIVE/RESEARCH) 下是合理的
     # 其他 EXEC (heredoc interpreter) 仍然拦截
     MODE_FILE = RUNTIME_DIR / "MODE.json"
@@ -466,9 +466,9 @@ def check_bash(command: str) -> Dict:
             category = CATEGORY_MAP.get(desc, DEFAULT_CATEGORY)
             score = CATEGORY_SCORES.get(category, 25)
 
-            # v4.2 #3: 研发模式下 inline/heredoc interpreter 只警告不拦截
+            # v1.2.0 #3: 研发模式下 inline/heredoc interpreter 只警告不拦截
             if desc in ("inline interpreter", "heredoc interpreter") and current_mode in RESEARCH_MODES:
-                print(f"[ACS v4.2] WARNING: [{category}] {desc} — allowed in {current_mode} mode (window={window_score(load_violations())})", file=sys.stderr)
+                print(f"[ACS v1.2.0] WARNING: [{category}] {desc} — allowed in {current_mode} mode (window={window_score(load_violations())})", file=sys.stderr)
                 continue  # 记录但不拦截
 
             w_score, locked, _ = add_violation(f"bash[{category}]: {desc}", score)
@@ -496,7 +496,7 @@ def _load_scope() -> Dict:
 
 
 def _infer_proposal_from_path(file_path: str) -> bool:
-    """v4.2 P0-1b: 路径推断 — 当 scope 未显式设 proposal_required 时，
+    """v1.2.0 P0-1b: 路径推断 — 当 scope 未显式设 proposal_required 时，
     从文件路径推断是否需要 proposal。
 
     open-world 模型: 已知安全路径不需要, 其他默认需要。
@@ -505,7 +505,7 @@ def _infer_proposal_from_path(file_path: str) -> bool:
     HOME = Path.home().resolve()
     resolved = Path(file_path).resolve() if file_path else Path()
 
-    # v4.2 safety assert: path 不逃出 HOME（/tmp 例外）
+    # v1.2.0 safety assert: path 不逃出 HOME（/tmp 例外）
     if not (resolved.is_relative_to(HOME) or resolved.is_relative_to(Path("/tmp"))):
         return True  # 逃出 HOME → 需要 proposal
 
@@ -562,7 +562,7 @@ def cmd_init(args: List[str]) -> None:
     task_id = args[0]
     # v4.0 修 M-5: task_id 校验
     if not re.match(r"^[a-zA-Z0-9_-]{1,64}$", task_id):
-        print(f"[ACS v4.2] ERROR: task_id must match [a-zA-Z0-9_-]{{1,64}}, got: {task_id!r}")
+        print(f"[ACS v1.2.0] ERROR: task_id must match [a-zA-Z0-9_-]{{1,64}}, got: {task_id!r}")
         sys.exit(1)
     allowed_dirs = [d.strip() for d in args[1].split(",") if d.strip()]
     extra = args[2:] if len(args) > 2 else []
@@ -574,8 +574,8 @@ def cmd_init(args: List[str]) -> None:
                        shadow_mode=shadow, proposal_required=proposal)
     clear_violations(reason=f"scope_reinit:{task_id}")
     integrity_store()
-    print(f"[ACS v4.2] scope: {task_id} ({len(allowed_dirs)} dirs) shadow={shadow} proposal={proposal}")
-    print(f"[ACS v4.2] violations cleared, lock released, integrity baseline updated")
+    print(f"[ACS v1.2.0] scope: {task_id} ({len(allowed_dirs)} dirs) shadow={shadow} proposal={proposal}")
+    print(f"[ACS v1.2.0] violations cleared, lock released, integrity baseline updated")
 
 
 def cmd_status() -> None:
@@ -596,12 +596,12 @@ def cmd_status() -> None:
     else:
         ts_str = "—"
 
-    print(f"[ACS v4.2] task: {tid}  created: {ts_str}  (source: {source})")
-    print(f"[ACS v4.2] dirs: {s.get('allowed_dirs', s.get('allowed_files', []))}")
-    print(f"[ACS v4.2] shadow: {s.get('shadow_mode', False)} | proposal: {s.get('proposal_required', False)}")
-    print(f"[ACS v4.2] violations: window={w_score}/{WINDOW_THRESHOLD} total={t_score}/{LOCK_DENY_SCORE}")
-    print(f"[ACS v4.2] locked: {'YES ⚠' if LOCK_FILE.exists() else 'NO'}")
-    print(f"[ACS v4.2] baseline_commands: {len(SCOPE_BASELINE_COMMANDS)} readonly cmds allowed without scope")
+    print(f"[ACS v1.2.0] task: {tid}  created: {ts_str}  (source: {source})")
+    print(f"[ACS v1.2.0] dirs: {s.get('allowed_dirs', s.get('allowed_files', []))}")
+    print(f"[ACS v1.2.0] shadow: {s.get('shadow_mode', False)} | proposal: {s.get('proposal_required', False)}")
+    print(f"[ACS v1.2.0] violations: window={w_score}/{WINDOW_THRESHOLD} total={t_score}/{LOCK_DENY_SCORE}")
+    print(f"[ACS v1.2.0] locked: {'YES ⚠' if LOCK_FILE.exists() else 'NO'}")
+    print(f"[ACS v1.2.0] baseline_commands: {len(SCOPE_BASELINE_COMMANDS)} readonly cmds allowed without scope")
 
     ok, tampered, missing, new = integrity_verify()
     stats = integrity_chain_stats()
@@ -609,22 +609,22 @@ def cmd_status() -> None:
     chain_len = stats.get("length", 0)
     if not ok:
         for t in tampered:
-            print(f"[ACS v4.2]   TAMPERED: {t}")
+            print(f"[ACS v1.2.0]   TAMPERED: {t}")
         for m in missing:
-            print(f"[ACS v4.2]   MISSING: {m}")
+            print(f"[ACS v1.2.0]   MISSING: {m}")
     else:
         chain_status = f"chain ok ({chain_len} entries, hash verified)" if stats.get("ok") else \
                        f"CHAIN BROKEN ({stats.get('broken_count', 0)} broken entries at indices {stats.get('broken_indices', [])})"
-        print(f"[ACS v4.2] INTEGRITY OK ({chain_status})")
+        print(f"[ACS v1.2.0] INTEGRITY OK ({chain_status})")
 
 
 def cmd_reset(args: List[str]) -> None:
     if "--force" not in args:
-        print("[ACS v4.2] ERROR: requires --force flag.")
+        print("[ACS v1.2.0] ERROR: requires --force flag.")
         sys.exit(1)
     clear_violations(reason="manual_reset_force")
     integrity_store()
-    print("[ACS v4.2] violations cleared, lock released, integrity baseline updated")
+    print("[ACS v1.2.0] violations cleared, lock released, integrity baseline updated")
 
 
 def cmd_unlock() -> None:
@@ -633,21 +633,21 @@ def cmd_unlock() -> None:
             LOCK_FILE.unlink()
         except FileNotFoundError:
             pass
-        print("[ACS v4.2] lock cleared")
+        print("[ACS v1.2.0] lock cleared")
     else:
-        print("[ACS v4.2] not locked")
+        print("[ACS v1.2.0] not locked")
 
 
 def cmd_integrity_check() -> None:
     ok, tampered, missing, new = integrity_verify()
     if ok and not new:
-        print("[ACS v4.2] INTEGRITY OK")
-        # v4.1 H-8: 顺便验证整个 chain
+        print("[ACS v1.2.0] INTEGRITY OK")
+        # v1.1.0 H-8: 顺便验证整个 chain
         chain_ok, broken = integrity_chain_verify()
         if chain_ok:
-            print("[ACS v4.2] chain hash verification: OK")
+            print("[ACS v1.2.0] chain hash verification: OK")
         else:
-            print(f"[ACS v4.2] chain hash verification: BROKEN ({len(broken)} broken entries)")
+            print(f"[ACS v1.2.0] chain hash verification: BROKEN ({len(broken)} broken entries)")
             for b in broken[:3]:
                 print(f"  index {b.get('index')}: {b.get('reason')} - {b.get('snapshot_id', '?')[:16]}")
         sys.exit(0)
@@ -661,28 +661,28 @@ def cmd_integrity_check() -> None:
 
 
 def cmd_chain_stats() -> None:
-    """v4.1 H-8 新增: 显示 chain 统计信息。"""
+    """v1.1.0 H-8 新增: 显示 chain 统计信息。"""
     stats = integrity_chain_stats()
-    print(f"[ACS v4.2] chain length: {stats.get('length', 0)}")
-    print(f"[ACS v4.2] first snapshot: {stats.get('first_snapshot', '?')}")
-    print(f"[ACS v4.2] last snapshot:  {stats.get('last_snapshot', '?')}")
-    print(f"[ACS v4.2] first ts: {stats.get('first_ts')}")
-    print(f"[ACS v4.2] last ts:  {stats.get('last_ts')}")
+    print(f"[ACS v1.2.0] chain length: {stats.get('length', 0)}")
+    print(f"[ACS v1.2.0] first snapshot: {stats.get('first_snapshot', '?')}")
+    print(f"[ACS v1.2.0] last snapshot:  {stats.get('last_snapshot', '?')}")
+    print(f"[ACS v1.2.0] first ts: {stats.get('first_ts')}")
+    print(f"[ACS v1.2.0] last ts:  {stats.get('last_ts')}")
     if stats.get("ok"):
-        print("[ACS v4.2] chain hash: OK (rolling hash chain verified)")
+        print("[ACS v1.2.0] chain hash: OK (rolling hash chain verified)")
     else:
-        print(f"[ACS v4.2] chain hash: BROKEN ({stats.get('broken_count', 0)} broken entries)")
+        print(f"[ACS v1.2.0] chain hash: BROKEN ({stats.get('broken_count', 0)} broken entries)")
         for idx in stats.get("broken_indices", []):
             print(f"  broken at index {idx}")
 
 
 def cmd_chain_verify() -> None:
-    """v4.1 H-8 新增: 验证整个 chain 完整性。"""
+    """v1.1.0 H-8 新增: 验证整个 chain 完整性。"""
     ok, broken = integrity_chain_verify()
     if ok:
-        print("[ACS v4.2] chain hash verification: OK (no tamper detected)")
+        print("[ACS v1.2.0] chain hash verification: OK (no tamper detected)")
         sys.exit(0)
-    print(f"[ACS v4.2] chain hash verification: BROKEN ({len(broken)} broken entries)")
+    print(f"[ACS v1.2.0] chain hash verification: BROKEN ({len(broken)} broken entries)")
     for b in broken[:10]:
         print(f"  index {b.get('index')}: {b.get('reason')}")
         if "expected_hash" in b:
@@ -694,7 +694,7 @@ def cmd_chain_verify() -> None:
 def cmd_integrity_store() -> None:
     """v4.0 新增：手动 store baseline（部署后/文件替换后用）。"""
     snap = integrity_store()
-    print(f"[ACS v4.2] baseline stored: {snap['snapshot_id'][:16]} (parent: {snap['parent']})")
+    print(f"[ACS v1.2.0] baseline stored: {snap['snapshot_id'][:16]} (parent: {snap['parent']})")
 
 
 # ═════════════════════════════════════════════════════════════════════════

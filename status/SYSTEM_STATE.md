@@ -2,7 +2,7 @@
 
 ## 运行状态
 
-- ACS: **ACTIVE** (v4.1, unlocked)
+- ACS: **ACTIVE** (v1.1.0, unlocked)
 - Window score: 0/80
 - 最近锁定: 2026-06-03 · Write `.claude/audit/` → +100 → locked · loop ×3
 

@@ -10,17 +10,17 @@
 
 | 位置 | 声称版本 | 实际状态 |
 |------|---------|---------|
-| `current` symlink | → `versions/v4.2` | 过期，部署代码已是 v5.x |
-| `versions/v4.2/` | v4.2 | 仅 8 个文件 |
-| 部署 `acs_lite.py` | v5.3 | ~1700 行 |
+| `current` symlink | → `versions/v1.2.0` | 过期，部署代码已是 v5.x |
+| `versions/v1.2.0/` | v1.2.0 | 仅 8 个文件 |
+| 部署 `acs_lite.py` | v1.5.0 | ~1700 行 |
 | 部署 `hook_orchestrator.py` | v5.0 | 7.3KB |
-| 部署 `orchestrator_config.json` | v5.0 | 与 v4.2 源码差异巨大 |
+| 部署 `orchestrator_config.json` | v5.0 | 与 v1.2.0 源码差异巨大 |
 
-说明：`known-bugs.md` 中有 v5.1-v5.3 的逐条修复记录，并非纯黑盒。真正缺失的是 **可复现的 v5.x 源码快照**（`versions/v5.x/` 目录不存在），不是完全没有变更记录。
+说明：`known-bugs.md` 中有 v1.4.1-v1.4.3 (formerly v5.x) 的逐条修复记录，并非纯黑盒。真正缺失的是 **可复现的 v5.x 源码快照**（`versions/v5.x/` 目录不存在），不是完全没有变更记录。
 
-### 第二层：部署配置漂移（orchestrator_config.json vs v4.2 源码）
+### 第二层：部署配置漂移（orchestrator_config.json vs v1.2.0 源码）
 
-| 文件 | v4.2 源码 | 部署 (v5.0) |
+| 文件 | v1.2.0 源码 | 部署 (v5.0) |
 |------|-----------|-------------|
 | `proposal_guard.py` | 已移至 PostToolUse | **回到 PreToolUse.Write\|Edit** |
 | `authority_invariant.py` | 已归档 | **重新激活在 PreToolUse.Write\|Edit** |
@@ -113,7 +113,7 @@ if env_root:
 
 ### P0-3: tool_input 非 dict 导致崩溃 【核实确认，修正行号】
 
-**文件**: `acs_lite.py:1231-1293`（部署文件，非 v4.2 的 704-722）
+**文件**: `acs_lite.py:1231-1293`（部署文件，非 v1.2.0 的 704-722）
 
 ```python
 tool = data.get("tool_name", "")
@@ -225,7 +225,7 @@ finally:
 
 ## P0-4 已确认修复
 
-原方案提出的 "CATEGORY_MAP 重复两份（143-170 和 183-220）" 经核实：当前部署文件中 `CATEGORY_MAP` 仅出现一次（~172 行），紧邻注释写明 "v5.0 唯一正规定义（消除 v4.2 的重复 bug）"。该 bug 在 v4.2→v5.0 期间已修复。**从方案移除。**
+原方案提出的 "CATEGORY_MAP 重复两份（143-170 和 183-220）" 经核实：当前部署文件中 `CATEGORY_MAP` 仅出现一次（~172 行），紧邻注释写明 "v5.0 唯一正规定义（消除 v1.2.0 的重复 bug）"。该 bug 在 v1.2.0→v5.0 期间已修复。**从方案移除。**
 
 ---
 
@@ -270,7 +270,7 @@ acs_lite.py → guard.py → filesystem_guard.py → proposal_guard.py
 | 无性能追踪 | 不知道 hook 延迟是否恶化 |
 | 无违规趋势 | 不知道攻击是否在升级 |
 | 无告警 | hook 崩溃无人知晓 |
-| `versions/v5.3/` 不存在 | v5.x 源码无版本控制 |
+| `versions/v1.5.0/` 不存在 | v5.x 源码无版本控制 |
 | 13 个 `.bak_cursor_bypass_20260716T092135Z` 批量备份残留 | 同一次改动的余留，清理即可 |
 | CLAUDE.md 治理文档与实际配置矛盾 | 误导维护者以为活跃 hook 是死代码 |
 | 无 CI/CD | 无自动化测试 |
@@ -286,4 +286,4 @@ acs_lite.py → guard.py → filesystem_guard.py → proposal_guard.py
 | **Week 1** | P0-1 Hook 崩溃策略 + P1-1 symlink + P1-2 子串匹配 + P1-3 tmp_path 孤儿 | 2 天 |
 | **Week 1** | CLAUDE.md 治理文档同步（让文档准确反映当前部署配置） | 半天 |
 | **Week 2** | P2 性能（单进程合并 + 完整性链压缩 + I/O 缓存） | 2 天 |
-| **Week 2** | P3 运维（versions/v5.3/ + deploy.sh + .bak 清理） | 1 天 |
+| **Week 2** | P3 运维（versions/v1.5.0/ + deploy.sh + .bak 清理） | 1 天 |

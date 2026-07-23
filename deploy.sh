@@ -1,14 +1,14 @@
 #!/bin/bash
 # deploy.sh — ACS v1.5.0 deployment tool
 # Usage:
-#   ./deploy.sh                    Deploy versions/v5.3/ → ~/.claude/hooks/
+#   ./deploy.sh                    Deploy versions/v1.5.0/ → ~/.claude/hooks/
 #   ./deploy.sh --dry-run          Preview changes without applying
 #   ./deploy.sh --rollback TIMESTAMP  Restore from backup
 #
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")" && pwd)"
-SOURCE_DIR="$REPO_ROOT/versions/v5.3"
+SOURCE_DIR="$REPO_ROOT/versions/v1.5.0"
 TARGET_DIR="$HOME/.claude/hooks"
 BACKUP_DIR="$REPO_ROOT/backups"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)

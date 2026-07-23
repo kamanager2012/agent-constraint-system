@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-risk_engine.py — Proposal Risk Engine (v4.2)
+risk_engine.py — Proposal Risk Engine (v1.2.0)
 将 export_graph.py 的结构 diff 转化为自动化治理决策。
 
-v4.2 改动 (#2 stdin 降级):
+v1.2.0 改动 (#2 stdin 降级):
   - 加 _is_proposal_json() 检测 hook JSON vs 真实 proposal JSON
   - --stdin 收到非 proposal JSON → 静默退出 0 (不评估, 不报 BLOCK)
 
@@ -87,7 +87,7 @@ MAX_FILE_RISK = 200
 
 
 # ============================================================
-# v4.2 #2: stdin 优雅降级
+# v1.2.0 #2: stdin 优雅降级
 # ============================================================
 
 def _is_proposal_json(data: Any) -> bool:
@@ -108,7 +108,7 @@ def _is_proposal_json(data: Any) -> bool:
 
 
 # ============================================================
-# 核心逻辑 (与 v4.1 相同, 此处省略完整复述, 保持原样)
+# 核心逻辑 (与 v1.1.0 相同, 此处省略完整复述, 保持原样)
 # ============================================================
 
 def _load_structural_diff(root: Path) -> dict:
@@ -339,7 +339,7 @@ def main():
                     proposal = json.load(f)
             if arg == "--stdin":
                 stdin_data = json.load(sys.stdin)
-                # v4.2 #2: 优雅降级 - 如果 stdin 不是 proposal JSON, 静默退出
+                # v1.2.0 #2: 优雅降级 - 如果 stdin 不是 proposal JSON, 静默退出
                 if not _is_proposal_json(stdin_data):
                     sys.exit(0)
                 proposal = stdin_data

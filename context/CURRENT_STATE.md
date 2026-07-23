@@ -1,25 +1,25 @@
-# 当前状态 — ACS v4.2
+# 当前状态 — ACS v1.2.0
 
 ## 运行态
 
 | 项目 | 状态 |
 |------|------|
-| 活跃代码 | `~/.claude/hooks/` (v4.2) |
+| 活跃代码 | `~/.claude/hooks/` (v1.2.0) |
 | 运行时状态 | `~/.claude/runtime/` |
 | 项目文档 | `~/agent-constraint-system/` |
-| 版本管理 | `current → v4.2` |
+| 版本管理 | `current → v1.2.0` |
 | Integrity Chain | hash verified, genesis clean |
 
 ## 已部署
 
-- hook_orchestrator 统一调度（v4.2, DEFAULT_CONFIG 同步）
+- hook_orchestrator 统一调度（v1.2.0, DEFAULT_CONFIG 同步）
 - 滑动窗口锁（WINDOW_SIZE=10, THRESHOLD=80）
 - ZONE 分区权限（WORKSPACE/SOURCE/RUNTIME/SYSTEM，audit/ 改为 RUNTIME）
 - Shadow Workspace（create/diff/merge/cleanup）
 - 完整性链（rolling hash chain, genesis baseline）
 - SCOPE_BASELINE（38 个只读命令无 scope 仍可用）
 
-## v4.2 控制流重构 (2026-06-05)
+## v1.2.0 控制流重构 (2026-06-05)
 
 | # | 修复 | 文件 |
 |---|------|------|
@@ -31,8 +31,8 @@
 | P1-4 | audit/ → RUNTIME zone | acs_paths.py |
 | P2-6 | rm -rf 正则收窄 | guard.py |
 | P2-7 | settings.json 研发模式 | read_guard.py |
-| #1 | DEFAULT_CONFIG 同步 v4.2 | hook_orchestrator.py |
-| #2 | acs_lite 版本号 v4.2 | acs_lite.py |
+| #1 | DEFAULT_CONFIG 同步 v1.2.0 | hook_orchestrator.py |
+| #2 | acs_lite 版本号 v1.2.0 | acs_lite.py |
 | #3 | python3 -c 研发模式降级 | acs_lite.py |
 
 ## 已知残余问题

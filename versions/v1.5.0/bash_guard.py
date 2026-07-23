@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""bash_guard.py — v4.2: archived. See guard.py for DANGEROUS_BASH patterns."""
+"""bash_guard.py — v1.2.0: archived. See guard.py for DANGEROUS_BASH patterns."""
 
 # Cursor Agent auto-imports Claude hooks from ~/.claude/settings*.json.
 # ACS/ORCH is Claude-only — never gate Cursor sessions.

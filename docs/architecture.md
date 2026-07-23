@@ -48,9 +48,9 @@ Thin glue layer (typically <200 lines) that:
 3. Writes agent-specific deny responses (markdown compliance)
 4. Manages agent-specific runtime directories
 
-### 3. Hook Scripts (`versions/v5.3/` → v1.5.0)
+### 3. Hook Scripts (`versions/v1.5.0/` → v1.5.0)
 
-Complete hook deployment for Claude Code / CodeBuddy Code. Unpacked by `install.sh` from `versions/v5.3/` → `~/.{agent}/hooks/`.
+Complete hook deployment for Claude Code / CodeBuddy Code. Unpacked by `install.sh` from `versions/v1.5.0/` → `~/.{agent}/hooks/`.
 
 ### 4. Runtime State (`~/.{agent}/runtime/`)
 

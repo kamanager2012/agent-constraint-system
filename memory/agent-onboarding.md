@@ -1,4 +1,4 @@
-# Agent Onboarding — ACS v4.1
+# Agent Onboarding — ACS v1.1.0
 
 ## Agent 进入顺序（4 层认知）
 
@@ -16,7 +16,7 @@
 ```
 ~/.claude/hooks/        ← 运行中（根目录 hooks/ symlink）
 ~/.claude/runtime/      ← 状态文件（根目录 runtime/ symlink）
-current → versions/v4.1
+current → versions/v1.1.0
 ```
 
 ## 核心模块

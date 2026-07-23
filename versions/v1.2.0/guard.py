@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-guard.py v4.2 — PreToolUse Hook: block destructive bash commands without explicit confirmation.
+guard.py v1.2.0 — PreToolUse Hook: block destructive bash commands without explicit confirmation.
 
-v4.1: Strategy: extract the first real command token (the executable), and check
+v1.1.0: Strategy: extract the first real command token (the executable), and check
 only direct arguments after it. Ignore everything inside quotes/heredocs.
 This prevents false positives like `python3 -c "echo kill -9 is bad"`.
 
-v4.2 P2-6: rm -rf 对常规目录名不再误触发。
+v1.2.0 P2-6: rm -rf 对常规目录名不再误触发。
 只有 /, /*, ~, * 这类 root/home/wildcard 目标才拦截。
 
 exit 0 = allow, exit 2 = block
@@ -21,7 +21,7 @@ import sys
 # These match the cleaned command (quotes/heredocs stripped)
 DANGEROUS = [
     # rm -rf /, rm -rf /*, rm -rf ~, rm -rf *
-    # v4.2 P2-6: Only block when target is root(/), home(~), or wildcard(*)
+    # v1.2.0 P2-6: Only block when target is root(/), home(~), or wildcard(*)
     # Regular named directories like /tmp/build, /home/user/project are NOT blocked
     # Pattern: rm with -f flag followed by bare / or ~ or * as standalone arg
     (r'(?:^|[|;]\s*)rm\s+(?:-[a-z]*f[a-z]*\s+)+(?:/$(?:\s|$)|/\*\s|~(?:\s|$)|\*(?:\s|$))',

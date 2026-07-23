@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-hook_orchestrator.py — v4.2 统一 hook 调度器
+hook_orchestrator.py — v1.2.0 统一 hook 调度器
 
-v4.2 变更:
+v1.2.0 变更:
   - DEFAULT_CONFIG 与 orchestrator_config.json 同步（proposal_guard 移至 PostToolUse）
-  - 版本号更新为 v4.2
-  - deny report 版本号 v4.2
+  - 版本号更新为 v1.2.0
+  - deny report 版本号 v1.2.0
 """
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ HOOKS_DIR: Path = Path("/home/jamesoldman/.claude/hooks")
 CONFIG_FILE: Path = HOOKS_DIR / "orchestrator_config.json"
 HOOK_TIMEOUT: int = 30  # 单 hook 超时 (秒)
 
-# ── 默认配置 v4.2: 与 orchestrator_config.json 保持同步 ──────────────────
+# ── 默认配置 v1.2.0: 与 orchestrator_config.json 保持同步 ──────────────────
 DEFAULT_CONFIG: Dict[str, Any] = {
     "PreToolUse": {
         "Write|Edit": [
@@ -151,22 +151,22 @@ def get_hooks_for_event(config: Dict[str, Any], event: str, tool_name: str) -> L
 
 def format_deny_report(event: str, tool_name: str, total_hooks: int,
                        executed: List[Dict[str, Any]], denied: List[Dict[str, Any]]) -> str:
-    """v4.2 核心: 统一 deny 报告."""
+    """v1.2.0 核心: 统一 deny 报告."""
     lines = [
-        f"[ORCH v4.2] DENIED: {event}/{tool_name}",
-        f"[ORCH v4.2] {total_hooks} hook(s) configured, {len(executed)} executed, "
+        f"[ORCH v1.2.0] DENIED: {event}/{tool_name}",
+        f"[ORCH v1.2.0] {total_hooks} hook(s) configured, {len(executed)} executed, "
         f"{len(denied)} denied",
     ]
     for r in executed:
         hook_name = r["hook"].split()[0].replace(".py", "")
         status_marker = "❌" if r["status"] == "deny" else "✓"
-        lines.append(f"[ORCH v4.2]   {status_marker} {hook_name} "
+        lines.append(f"[ORCH v1.2.0]   {status_marker} {hook_name} "
                      f"({r['elapsed_ms']}ms, exit {r['exit']})")
         if r["status"] == "deny":
             stderr_first = r["stderr"].split("\n")[0] if r["stderr"] else "(no stderr)"
-            lines.append(f"[ORCH v4.2]     → {stderr_first[:300]}")
+            lines.append(f"[ORCH v1.2.0]     → {stderr_first[:300]}")
     if not denied:
-        lines.append("[ORCH v4.2] (no explicit deny — exit code 2 from unknown cause)")
+        lines.append("[ORCH v1.2.0] (no explicit deny — exit code 2 from unknown cause)")
     return "\n".join(lines)
 
 
