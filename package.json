@@ -10,5 +10,5 @@
   "bin": { "acs": "./bin/acs" },
   "files": ["bin/", "acs_core/", "adapters/", "versions/v5.3/", "benchmarks/", "docs/", "application/", "LICENSE", "README.md", "README.zh-CN.md", "install.sh"],
   "engines": { "node": ">=18" },
-  "scripts": { "postinstall": "echo '[ACS v1.5] Run: acs install'" }
+  "scripts": { "postinstall": "echo '[ACS v1.5.0] Run: acs install'" }
 }

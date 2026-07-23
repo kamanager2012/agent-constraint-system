@@ -5,7 +5,7 @@
 set -e
 INSTALL_DIR="$HOME/.acs"
 
-echo "ACS v1.5 — Agent Constraint System"
+echo "ACS v1.5.0 — Agent Constraint System"
 echo ""
 
 # Download from GitHub

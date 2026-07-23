@@ -2,7 +2,7 @@
 """
 ACS Codex CLI Demo — Simulated E2E Session
 
-Demonstrates ACS v1.5 protecting Codex CLI in real-time.
+Demonstrates ACS v1.5.0 protecting Codex CLI in real-time.
 Generates clean output suitable for screenshots/recording.
 
 Usage: python3 demo/codex_e2e_demo.py

@@ -1,5 +1,5 @@
 #!/bin/bash
-# deploy.sh — ACS v1.5 deployment tool
+# deploy.sh — ACS v1.5.0 deployment tool
 # Usage:
 #   ./deploy.sh                    Deploy versions/v5.3/ → ~/.claude/hooks/
 #   ./deploy.sh --dry-run          Preview changes without applying
@@ -68,7 +68,7 @@ fi
 
 # --- Deploy ---
 echo ""
-echo "=== Deploying v1.5 → $TARGET_DIR ==="
+echo "=== Deploying v1.5.0 → $TARGET_DIR ==="
 deployed=0
 skipped=0
 

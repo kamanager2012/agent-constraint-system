@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-acs_lite.py — ACS v1.5 统一优化版
+acs_lite.py — ACS v1.5.0 统一优化版
 
-v1.5 变更 (2026-07-13):
+v1.5.0 变更 (2026-07-13):
 - _load_scope() 统一读取 ACTIVE_TASK.json 权威源，消除双文件同步风险
 
 v5.2 变更 (2026-07-13):
@@ -243,16 +243,16 @@ SESSION_FEEDBACK_RE = re.compile(
 # ═════════════════════════════════════════════════════════════════════════
 
 def _load_scope() -> Dict:
-    """v1.5: 统一 scope 读取 — ACTIVE_TASK.json 权威源，SCOPE_FILE 兼容回退。"""
+    """v1.5.0: 统一 scope 读取 — ACTIVE_TASK.json 权威源，SCOPE_FILE 兼容回退。"""
     try:
-        # v1.5: ACTIVE_TASK.json is the authoritative source
+        # v1.5.0: ACTIVE_TASK.json is the authoritative source
         if ACTIVE_TASK_FILE.exists():
             data = json.loads(ACTIVE_TASK_FILE.read_text())
             if data.get("task_id"):
                 return data
     except (json.JSONDecodeError, OSError):
         pass
-    # v1.5: fallback to SCOPE_FILE for backward compatibility
+    # v1.5.0: fallback to SCOPE_FILE for backward compatibility
     try:
         if SCOPE_FILE.exists():
             return json.loads(SCOPE_FILE.read_text())
@@ -326,7 +326,7 @@ def _deny(reason: str) -> None:
         "hookSpecificOutput": {
             "hookEventName": "PreToolUse",
             "permissionDecision": "deny",
-            "permissionDecisionReason": f"[ACS v1.5] BLOCKED: {reason}",
+            "permissionDecisionReason": f"[ACS v1.5.0] BLOCKED: {reason}",
         }
     })
     sys.stderr.write(payload + "\n")
@@ -506,7 +506,7 @@ def context_tick() -> Tuple[bool, str]:
         state["rounds_since_compact"] = 0
         state["last_compact_ts"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
         _save_context_state(state)
-        return True, f"[ACS v1.5] COMPACT_DUE — {COMPACT_INTERVAL} rounds elapsed. Run /compact to continue."
+        return True, f"[ACS v1.5.0] COMPACT_DUE — {COMPACT_INTERVAL} rounds elapsed. Run /compact to continue."
 
     _save_context_state(state)
     return False, ""
@@ -904,8 +904,8 @@ def check_write(file_path: str, tool_name: str, tool_input: Dict) -> Dict:
     # v5.0 safety asserts
     HOME = Path.home().resolve()
     assert resolved.is_relative_to(HOME) or resolved.is_relative_to(Path("/tmp")), \
-        f"[ACS v1.5] path escape detected: {resolved}"
-    assert scope is not None, "[ACS v1.5] scope must exist at this point"
+        f"[ACS v1.5.0] path escape detected: {resolved}"
+    assert scope is not None, "[ACS v1.5.0] scope must exist at this point"
 
     # 8. STRUCTURAL VERIFIER
     if resolved.exists() and resolved.suffix in SUPPORTED_SUFFIXES:
@@ -1010,7 +1010,7 @@ def check_bash(command: str) -> Dict:
             # v5.0: 研发模式下 inline/heredoc interpreter 只警告不拦截
             if desc in ("inline interpreter", "heredoc interpreter") and current_mode in RESEARCH_MODES:
                 print(
-                    f"[ACS v1.5] WARNING: [{category}] {desc} — "
+                    f"[ACS v1.5.0] WARNING: [{category}] {desc} — "
                     f"allowed in {current_mode} mode (window={_ws_display})",
                     file=sys.stderr
                 )
@@ -1021,7 +1021,7 @@ def check_bash(command: str) -> Dict:
                 _deny(f"locked after dangerous bash (window={w_score})")
             _deny(f"[{category}] {desc} — {command[:120]} (window={w_score})")
 
-            # v1.5: Asset-aware safety check
+            # v1.5.0: Asset-aware safety check
             
             _rm_match = re.search(r"\brm\s+(?:-[a-zA-Z]*[rf][a-zA-Z]*\s+)?(\S+)", command)
             if _rm_match and _asset_ledger.is_tracked(_rm_match.group(1)):
@@ -1054,7 +1054,7 @@ def cmd_init(args: List[str]) -> None:
         sys.exit(1)
     task_id = args[0]
     if not re.match(r"^[a-zA-Z0-9_-]{1,64}$", task_id):
-        print(f"[ACS v1.5] ERROR: task_id must match [a-zA-Z0-9_-]{{1,64}}, got: {task_id!r}")
+        print(f"[ACS v1.5.0] ERROR: task_id must match [a-zA-Z0-9_-]{{1,64}}, got: {task_id!r}")
         sys.exit(1)
 
     allowed_dirs = [os.path.expanduser(d.strip()) for d in args[1].split(",") if d.strip()]
@@ -1069,9 +1069,9 @@ def cmd_init(args: List[str]) -> None:
     _budget_reset()
     integrity_store()
 
-    print(f"[ACS v1.5] scope: {task_id} ({len(allowed_dirs)} dirs) "
+    print(f"[ACS v1.5.0] scope: {task_id} ({len(allowed_dirs)} dirs) "
           f"shadow={shadow} proposal={proposal}")
-    print(f"[ACS v1.5] violations cleared, lock released, "
+    print(f"[ACS v1.5.0] violations cleared, lock released, "
           f"budget reset, integrity baseline updated")
 
 
@@ -1092,14 +1092,14 @@ def cmd_status() -> None:
     elif s.get("updated_at"):
         ts_str = s["updated_at"]
 
-    print(f"[ACS v1.5] task: {tid}  created: {ts_str}  (source: {source})")
-    print(f"[ACS v1.5] dirs: {s.get('allowed_dirs', s.get('allowed_files', []))}")
-    print(f"[ACS v1.5] shadow: {s.get('shadow_mode', False)} | "
+    print(f"[ACS v1.5.0] task: {tid}  created: {ts_str}  (source: {source})")
+    print(f"[ACS v1.5.0] dirs: {s.get('allowed_dirs', s.get('allowed_files', []))}")
+    print(f"[ACS v1.5.0] shadow: {s.get('shadow_mode', False)} | "
           f"proposal: {s.get('proposal_required', False)}")
-    print(f"[ACS v1.5] violations: window={w_score}/{WINDOW_THRESHOLD} "
+    print(f"[ACS v1.5.0] violations: window={w_score}/{WINDOW_THRESHOLD} "
           f"total={t_score}/{LOCK_DENY_SCORE}")
-    print(f"[ACS v1.5] locked: {'YES ⚠' if LOCK_FILE.exists() else 'NO'}")
-    print(f"[ACS v1.5] baseline_commands: {len(SCOPE_BASELINE_COMMANDS)} "
+    print(f"[ACS v1.5.0] locked: {'YES ⚠' if LOCK_FILE.exists() else 'NO'}")
+    print(f"[ACS v1.5.0] baseline_commands: {len(SCOPE_BASELINE_COMMANDS)} "
           f"readonly cmds allowed without scope")
 
     ok, tampered, missing, new = integrity_verify()
@@ -1107,15 +1107,15 @@ def cmd_status() -> None:
     chain_len = stats.get("length", 0)
     if not ok:
         for t in tampered:
-            print(f"[ACS v1.5]   TAMPERED: {t}")
+            print(f"[ACS v1.5.0]   TAMPERED: {t}")
         for m in missing:
-            print(f"[ACS v1.5]   MISSING: {m}")
+            print(f"[ACS v1.5.0]   MISSING: {m}")
     else:
         chain_status = (f"chain ok ({chain_len} entries, hash verified)"
                         if stats.get("ok")
                         else f"CHAIN BROKEN ({stats.get('broken_count', 0)} broken entries "
                              f"at indices {stats.get('broken_indices', [])})")
-        print(f"[ACS v1.5] INTEGRITY OK ({chain_status})")
+        print(f"[ACS v1.5.0] INTEGRITY OK ({chain_status})")
 
     # === v5.0 新增: Token 预算状态 ===
     budget = _load_budget()
@@ -1177,12 +1177,12 @@ def cmd_budget_report() -> None:
 
 def cmd_reset(args: List[str]) -> None:
     if "--force" not in args:
-        print("[ACS v1.5] ERROR: requires --force flag.")
+        print("[ACS v1.5.0] ERROR: requires --force flag.")
         sys.exit(1)
     clear_violations(reason="manual_reset_force")
     _budget_reset()
     integrity_store()
-    print("[ACS v1.5] violations cleared, budget reset, lock released, baseline updated")
+    print("[ACS v1.5.0] violations cleared, budget reset, lock released, baseline updated")
 
 
 def cmd_unlock() -> None:
@@ -1191,20 +1191,20 @@ def cmd_unlock() -> None:
             LOCK_FILE.unlink()
         except FileNotFoundError:
             pass
-        print("[ACS v1.5] lock cleared")
+        print("[ACS v1.5.0] lock cleared")
     else:
-        print("[ACS v1.5] not locked")
+        print("[ACS v1.5.0] not locked")
 
 
 def cmd_integrity_check() -> None:
     ok, tampered, missing, new = integrity_verify()
     if ok and not new:
-        print("[ACS v1.5] INTEGRITY OK")
+        print("[ACS v1.5.0] INTEGRITY OK")
         chain_ok, broken = integrity_chain_verify()
         if chain_ok:
-            print("[ACS v1.5] chain hash verification: OK")
+            print("[ACS v1.5.0] chain hash verification: OK")
         else:
-            print(f"[ACS v1.5] chain hash verification: BROKEN "
+            print(f"[ACS v1.5.0] chain hash verification: BROKEN "
                   f"({len(broken)} broken entries)")
         sys.exit(0)
     for t in tampered:
@@ -1218,24 +1218,24 @@ def cmd_integrity_check() -> None:
 
 def cmd_chain_stats() -> None:
     stats = integrity_chain_stats()
-    print(f"[ACS v1.5] chain length: {stats.get('length', 0)}")
-    print(f"[ACS v1.5] first snapshot: {stats.get('first_snapshot', '?')}")
-    print(f"[ACS v1.5] last snapshot:  {stats.get('last_snapshot', '?')}")
-    print(f"[ACS v1.5] first ts: {stats.get('first_ts')}")
-    print(f"[ACS v1.5] last ts:  {stats.get('last_ts')}")
+    print(f"[ACS v1.5.0] chain length: {stats.get('length', 0)}")
+    print(f"[ACS v1.5.0] first snapshot: {stats.get('first_snapshot', '?')}")
+    print(f"[ACS v1.5.0] last snapshot:  {stats.get('last_snapshot', '?')}")
+    print(f"[ACS v1.5.0] first ts: {stats.get('first_ts')}")
+    print(f"[ACS v1.5.0] last ts:  {stats.get('last_ts')}")
     if stats.get("ok"):
-        print("[ACS v1.5] chain hash: OK (rolling hash chain verified)")
+        print("[ACS v1.5.0] chain hash: OK (rolling hash chain verified)")
     else:
-        print(f"[ACS v1.5] chain hash: BROKEN "
+        print(f"[ACS v1.5.0] chain hash: BROKEN "
               f"({stats.get('broken_count', 0)} broken entries)")
 
 
 def cmd_chain_verify() -> None:
     ok, broken = integrity_chain_verify()
     if ok:
-        print("[ACS v1.5] chain hash verification: OK (no tamper detected)")
+        print("[ACS v1.5.0] chain hash verification: OK (no tamper detected)")
         sys.exit(0)
-    print(f"[ACS v1.5] chain hash verification: BROKEN ({len(broken)} broken entries)")
+    print(f"[ACS v1.5.0] chain hash verification: BROKEN ({len(broken)} broken entries)")
     for b in broken[:10]:
         print(f"  index {b.get('index')}: {b.get('reason')}")
         if "expected_hash" in b:
@@ -1246,7 +1246,7 @@ def cmd_chain_verify() -> None:
 
 def cmd_integrity_store() -> None:
     snap = integrity_store()
-    print(f"[ACS v1.5] baseline stored: "
+    print(f"[ACS v1.5.0] baseline stored: "
           f"{snap['snapshot_id'][:16]} (parent: {snap['parent']})")
 
 
@@ -1288,7 +1288,7 @@ def main() -> None:
     #             "hookEventName": "PreToolUse",
     #             "permissionDecision": "warn",
     #             "permissionDecisionReason":
-    #                 f"[ACS v1.5] TOKEN_SOFT: {combined:,}/{TOKEN_SOFT_LIMIT:,} — approaching limit"
+    #                 f"[ACS v1.5.0] TOKEN_SOFT: {combined:,}/{TOKEN_SOFT_LIMIT:,} — approaching limit"
     #         }
     #     })
     #     sys.stderr.write(msg + "\n")
@@ -1300,7 +1300,7 @@ def main() -> None:
     #             "hookEventName": "PreToolUse",
     #             "permissionDecision": "warn",
     #             "permissionDecisionReason":
-    #                 f"[ACS v1.5] TOKEN_HARD: {combined:,} >= {TOKEN_HARD_LIMIT:,}. "
+    #                 f"[ACS v1.5.0] TOKEN_HARD: {combined:,} >= {TOKEN_HARD_LIMIT:,}. "
     #                 f"Open new session for continued work."
     #         }
     #     })
@@ -1321,7 +1321,7 @@ def main() -> None:
                 budget_result = _budget_add_usage(0, len(cmd), model=budget.get("current_model"))
                 action = budget_result[1]
                 if action == "degrade":
-                    print(f"[ACS v1.5] Auto-degrade: {budget.get('current_model')} → "
+                    print(f"[ACS v1.5.0] Auto-degrade: {budget.get('current_model')} → "
                           f"{budget_result[0].get('current_model')}", file=sys.stderr)
 
     elif tool == "Read":
@@ -1352,7 +1352,7 @@ _COMMANDS = {
     "unlock":            cmd_unlock,
     "budget-report":     cmd_budget_report,
     "compact-ack":       lambda: (context_compact_done(),
-                                   print("[ACS v1.5] compact acknowledged")),
+                                   print("[ACS v1.5.0] compact acknowledged")),
     "integrity-check":   cmd_integrity_check,
     "integrity-store":   cmd_integrity_store,
     "chain-stats":       cmd_chain_stats,
