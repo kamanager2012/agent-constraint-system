@@ -69,7 +69,7 @@
           },
           {
             "type": "command",
-            "command": "python3 $HOME/.codebuddy/hooks/risk_engine.py",
+            "command": "python3 $HOME/.codebuddy/hooks/risk_engine.py assess --stdin",
             "timeout": 5
           }
         ]

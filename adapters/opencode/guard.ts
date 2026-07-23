@@ -28,6 +28,8 @@ export const GIT_DESTRUCTIVE: [RegExp, string][] = [
   [/git\s+clean\s+-[fdx]+/, "git clean -f/d/x (deletes untracked files)"],
   [/git\s+push\s+--force/, "git push --force (overwrites remote history)"],
   [/git\s+push\s+-f\b/, "git push -f (overwrites remote history)"],
+  [/git\s+branch\s+-[dD]\s+(?:main|master)\b/, "git branch -d/D main/master (protected)"],
+  [/git\s+branch\s+-[mM]\s+(?:main|master)\b/, "git branch -m/M main/master (protected)"],
 ];
 
 // ── Forbidden system roots ──────────────────────────────────────────────────

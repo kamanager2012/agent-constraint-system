@@ -32,7 +32,7 @@ hooks:
       command: "python3 ~/.codebuddy/hooks/token_budget.py"
       timeout: 3
     - matcher: "terminal|write_file|patch"
-      command: "python3 ~/.codebuddy/hooks/risk_engine.py"
+      command: "python3 ~/.codebuddy/hooks/risk_engine.py assess --stdin"
       timeout: 5
     - matcher: "write_file|patch"
       command: "python3 ~/.codebuddy/hooks/proposal_guard.py"

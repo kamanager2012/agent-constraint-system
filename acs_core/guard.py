@@ -86,6 +86,8 @@ GIT_DESTRUCTIVE: List[Tuple[str, str]] = [
     (r"git\s+push\s+--force(?!-)",               "git push --force (overwrites remote history)"),
     (r"git\s+push\s+-f\b",                     "git push -f (overwrites remote history)"),
     (r"git\s+checkout\s+--\s+\.",              "git checkout -- . (discards all changes)"),
+    (r"git\s+branch\s+-[dD]\s+(?:main|master)\b", "git branch -d/D main/master (protected)"),
+    (r"git\s+branch\s+-[mM]\s+(?:main|master)\b", "git branch -m/M main/master (protected)"),
 ]
 
 COMPILED_GIT = [(re.compile(p, re.IGNORECASE), desc) for p, desc in GIT_DESTRUCTIVE]
