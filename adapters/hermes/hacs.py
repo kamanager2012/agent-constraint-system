@@ -16,11 +16,13 @@ from pathlib import Path
 
 sys.path.insert(0, os.path.join(Path.home(), ".acs_core"))
 
-from acs_core import (  # type: ignore
-    check_bash, FORBIDDEN_ROOTS, is_forbidden_path,
+from guard import check_bash
+from paths import FORBIDDEN_ROOTS, is_forbidden_path
+from violations import (
     add_violation, clear_violations, should_lock, window_score, load_violations,
-    integrity_store, integrity_verify, AuditLogger,
+    integrity_store, integrity_verify,
 )
+from audit import AuditLogger
 
 HERMES_DIR = Path.home() / ".hermes"
 HOOKS_DIR = HERMES_DIR / "agent-hooks"
