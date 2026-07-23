@@ -16,6 +16,8 @@ export const DANGEROUS_BASH: [RegExp, string][] = [
   [/kill\s+-9\b/i, "kill -9 (force kill)"],
   [/mkfs\./i, "mkfs (disk format)"],
   [/dd\s+if=\/dev\//i, "dd writing to block device"],
+  [/\bsed\b\s+-i\b/, "sed -i (WSL in-place edit, rename race risk)"],
+  [/\bsed\b\s+--in-place\b/, "sed --in-place (WSL truncation risk)"],
 ];
 
 // ── Git destructive patterns ────────────────────────────────────────────────

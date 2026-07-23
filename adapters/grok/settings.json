@@ -1,12 +1,13 @@
 {
+  "description": "GACS v1.5 — Grok Agent Constraint System (full hook chain)",
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Bash",
+        "matcher": "Bash|execute_command",
         "hooks": [
           {
             "type": "command",
-            "command": "python3 $HOME/.codebuddy/hooks/acs_lite.py",
+            "command": "python3 $HOME/.grok/hooks/acs_grok.py",
             "timeout": 10
           },
           {
@@ -22,11 +23,11 @@
         ]
       },
       {
-        "matcher": "Write|Edit|MultiEdit",
+        "matcher": "Write|Edit|write_file|replace",
         "hooks": [
           {
             "type": "command",
-            "command": "python3 $HOME/.codebuddy/hooks/acs_lite.py",
+            "command": "python3 $HOME/.grok/hooks/acs_grok.py",
             "timeout": 10
           },
           {
@@ -37,7 +38,7 @@
         ]
       },
       {
-        "matcher": "Read",
+        "matcher": "Read|read_file",
         "hooks": [
           {
             "type": "command",
@@ -49,11 +50,11 @@
     ],
     "PostToolUse": [
       {
-        "matcher": "Bash|Write|Edit|MultiEdit",
+        "matcher": "Bash|execute_command|Write|Edit|write_file|replace",
         "hooks": [
           {
             "type": "command",
-            "command": "python3 $HOME/.codebuddy/hooks/audit_hook.py",
+            "command": "python3 $HOME/.grok/hooks/acs_grok.py",
             "timeout": 10
           },
           {
@@ -74,7 +75,7 @@
         ]
       },
       {
-        "matcher": "Write|Edit",
+        "matcher": "Write|Edit|write_file|replace",
         "hooks": [
           {
             "type": "command",
@@ -89,7 +90,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 $HOME/.codebuddy/hooks/acs_lite.py status",
+            "command": "python3 $HOME/.grok/hooks/acs_grok.py",
             "timeout": 5
           },
           {

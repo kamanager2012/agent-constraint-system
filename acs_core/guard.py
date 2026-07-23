@@ -49,6 +49,8 @@ DANGEROUS_BASH: List[Tuple[str, str]] = [
     (r"\bchown\s+root\b",                                      "chown root"),
     (r">\s*/etc/",                                              "overwrite /etc file"),
     (r">\s*/(?:etc|boot)/",                                     "redirect overwrite to system path"),
+    (r"\bsed\b\s+-i\b",                                       "sed -i (WSL in-place edit, rename race risk)"),
+    (r"\bsed\b\s+--in-place\b",                               "sed --in-place (WSL truncation risk)"),
     # File injection into system directories
     (r"\b(?:mv|cp|install)\s+.*\s+/(?:etc|usr/bin|usr/sbin|bin|sbin|boot)/",
      "file injection into system directory"),

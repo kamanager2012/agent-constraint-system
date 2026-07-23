@@ -2,12 +2,52 @@
   "hooks": {
     "BeforeTool": [
       {
-        "matcher": "run_shell_command|execute_command|write_file|replace",
+        "matcher": "run_shell_command|execute_command",
         "hooks": [
           {
             "name": "gacs-guard",
             "type": "command",
             "command": "python3 $HOME/.gemini/hooks/gacs.py",
+            "timeout": 10000
+          },
+          {
+            "name": "sed-guard",
+            "type": "command",
+            "command": "python3 $HOME/.codebuddy/hooks/sed_guard.py",
+            "timeout": 5000
+          },
+          {
+            "name": "filesystem-guard",
+            "type": "command",
+            "command": "python3 $HOME/.codebuddy/hooks/filesystem_guard.py",
+            "timeout": 5000
+          }
+        ]
+      },
+      {
+        "matcher": "write_file|replace",
+        "hooks": [
+          {
+            "name": "gacs-guard",
+            "type": "command",
+            "command": "python3 $HOME/.gemini/hooks/gacs.py",
+            "timeout": 10000
+          },
+          {
+            "name": "filesystem-guard",
+            "type": "command",
+            "command": "python3 $HOME/.codebuddy/hooks/filesystem_guard.py",
+            "timeout": 5000
+          }
+        ]
+      },
+      {
+        "matcher": "read_file",
+        "hooks": [
+          {
+            "name": "read-guard",
+            "type": "command",
+            "command": "python3 $HOME/.codebuddy/hooks/read_guard.py",
             "timeout": 10000
           }
         ]
@@ -22,6 +62,35 @@
             "type": "command",
             "command": "python3 $HOME/.gemini/hooks/gacs.py",
             "timeout": 10000
+          },
+          {
+            "name": "abi-guard",
+            "type": "command",
+            "command": "python3 $HOME/.codebuddy/hooks/abi_guard.py",
+            "timeout": 5000
+          },
+          {
+            "name": "token-budget",
+            "type": "command",
+            "command": "python3 $HOME/.codebuddy/hooks/token_budget.py",
+            "timeout": 3000
+          },
+          {
+            "name": "risk-engine",
+            "type": "command",
+            "command": "python3 $HOME/.codebuddy/hooks/risk_engine.py",
+            "timeout": 5000
+          }
+        ]
+      },
+      {
+        "matcher": "write_file|replace",
+        "hooks": [
+          {
+            "name": "proposal-guard",
+            "type": "command",
+            "command": "python3 $HOME/.codebuddy/hooks/proposal_guard.py",
+            "timeout": 5000
           }
         ]
       }
