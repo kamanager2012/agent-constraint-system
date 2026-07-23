@@ -13,13 +13,22 @@ Architecture:
 """
 from __future__ import annotations
 
-import json, subprocess, sys
+import json, os, subprocess, sys
 from pathlib import Path
+
+# ── Agent-specific bypass: never gate Cursor or Grok sessions ──
+# These agents read Claude's hook config but have their own runtimes.
+_e = os.environ
+if _e.get("CURSOR_PROJECT_DIR") or _e.get("CURSOR_VERSION") or _e.get("CURSOR_AGENT"):
+    raise SystemExit(0)
+if _e.get("GROK_TELEMETRY_TRACE_UPLOAD") is not None:
+    raise SystemExit(0)
 
 _AGENT_DIR = Path(__file__).resolve().parent
 _HOME = Path.home()
 
 AGENT_MAP = {
+    str(_HOME / ".claude" / "hooks"):          "claude",
     str(_HOME / ".codebuddy" / "hooks"):      "codebuddy",
     str(_HOME / ".codex" / "hooks"):           "codex",
     str(_HOME / ".hermes" / "agent-hooks"):    "hermes",
@@ -93,16 +102,21 @@ def _run_guard(entry: str, stdin_data: str) -> int:
         r = subprocess.run(
             [sys.executable, str(script)] + args,
             input=stdin_data, text=True, capture_output=True, timeout=10)
-        if r.returncode not in (0, 2):
+        if r.returncode == 2:
+            return 2  # Explicit deny
+        if r.returncode != 0:
+            # Exit 1 (or other non-zero) = guard error -> fail-closed
             err = (r.stderr or r.stdout).strip()
-            if err:
-                print(f"[ORCH:{AGENT}] {name} err(c={r.returncode}): {err[:200]}",
-                      file=sys.stderr)
-        return r.returncode
+            print(f"[ORCH:{AGENT}] {name} guard error (exit={r.returncode}), DENYING: {err[:200]}",
+                  file=sys.stderr)
+            return 2
+        return 0
     except subprocess.TimeoutExpired:
-        return 0
-    except Exception:
-        return 0
+        print(f"[ORCH:{AGENT}] {name} timeout, DENYING (fail-closed)", file=sys.stderr)
+        return 2
+    except Exception as e:
+        print(f"[ORCH:{AGENT}] {name} exception, DENYING (fail-closed): {e}", file=sys.stderr)
+        return 2
 
 
 def main() -> None:

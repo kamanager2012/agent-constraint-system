@@ -2,7 +2,7 @@
 # Used by all ACS adapter variants.
 
 import re
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 # -- Dangerous Bash patterns --
 
@@ -109,24 +109,27 @@ def clean_command(cmd: str) -> str:
 
 # -- Guard check --
 
+# Compiled once at import time (was recompiled on every check_bash call)
+_BYPASS_PATTERNS = [
+    (re.compile(r"\bbase64\s+(?:-d|--decode).*\|.*(?:ba)?sh\b", re.I),
+     "base64 decode pipe to shell"),
+    (re.compile(r"\bxxd\s+-r\s+-p.*\|.*(?:ba)?sh\b", re.I),
+     "xxd decode pipe to shell"),
+    (re.compile(r"\bopenssl\s+(?:base64|enc)\s+-d.*\|.*(?:ba)?sh\b", re.I),
+     "openssl decode pipe to shell"),
+    # sh -c with encoded content in subshell (before quote stripping)
+    (re.compile(r"\bsh\s+-c\s+.*\$\(.*(?:base64|xxd|openssl).*(?:-d|--decode).*\)", re.I),
+     "sh -c with encoded subshell"),
+]
+
+
 def check_bash(command: str) -> str | None:
     """Check a Bash command against all dangerous patterns.
 
     Returns the blocking reason if dangerous, None if safe.
     """
-    # First pass: check for bypass patterns (before cleaning)
-    bypass_patterns = [
-        (re.compile(r"\bbase64\s+(?:-d|--decode).*\|.*(?:ba)?sh\b", re.I),
-         "base64 decode pipe to shell"),
-        (re.compile(r"\bxxd\s+-r\s+-p.*\|.*(?:ba)?sh\b", re.I),
-         "xxd decode pipe to shell"),
-        (re.compile(r"\bopenssl\s+(?:base64|enc)\s+-d.*\|.*(?:ba)?sh\b", re.I),
-         "openssl decode pipe to shell"),
-        # sh -c with encoded content in subshell (before quote stripping)
-        (re.compile(r"\bsh\s+-c\s+.*\$\(.*(?:base64|xxd|openssl).*(?:-d|--decode).*\)", re.I),
-         "sh -c with encoded subshell"),
-    ]
-    for pattern, desc in bypass_patterns:
+    # First pass: check for bypass patterns (before cleaning — encoded content in quotes)
+    for pattern, desc in _BYPASS_PATTERNS:
         if pattern.search(command):
             return f"Dangerous command blocked: {desc}"
 
@@ -137,8 +140,9 @@ def check_bash(command: str) -> str | None:
         if pattern.search(cleaned):
             return f"Dangerous command blocked: {desc}"
 
+    # Git patterns run on cleaned command (avoids false positives from commit messages)
     for pattern, desc in COMPILED_GIT:
-        if pattern.search(command):
+        if pattern.search(cleaned):
             return f"Destructive git blocked: {desc}"
 
     return None
@@ -171,7 +175,8 @@ def check_bash_with_context(
             return asset_result
 
     # Level 3: Post-error safe mode (only upgrades ALLOW -> CONFIRM, never downgrades BLOCK)
-    if error_count >= 2 and _is_destructive(command) and result["decision"] == "ALLOW":
+    # If we reached here, Level 1 and Level 2 both passed (would be ALLOW).
+    if error_count >= 2 and _is_destructive(command):
         return {
             "decision": "CONFIRM",
             "reason": "safe_mode: agent has 2+ recent errors".format(error_count),
@@ -182,7 +187,7 @@ def check_bash_with_context(
 
 def _is_destructive(command: str) -> bool:
     """Check if a command is potentially destructive (rm, git destructive, etc.)."""
-    return bool(re.search(r"\b(?:rm\s+-[rf]|git\s+(?:reset|clean|push|checkout|restore))\b", command))
+    return bool(re.search(r"\b(?:rm\s+-[a-zA-Z]*[rf][a-zA-Z]*|git\s+(?:reset|clean|push|checkout|restore))\b", command))
 
 
 def _check_asset_safety(command: str, ledger) -> Optional[dict]:

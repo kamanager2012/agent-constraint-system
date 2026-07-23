@@ -43,19 +43,26 @@ class SafeMode:
         self._save()
 
     def to_dict(self) -> Dict:
+        # Compute from in-memory state only (no _load() recursion into _save)
+        now = time.time()
+        cutoff = now - self.window_seconds
+        recent = [t for t in self._errors if t > cutoff]
         return {
             "errors": self._errors,
             "threshold": self.threshold,
             "window_seconds": self.window_seconds,
-            "active": self.is_active(),
-            "count": self.error_count(),
+            "active": len(recent) >= self.threshold,
+            "count": len(recent),
         }
 
     def _save(self) -> None:
         if self._storage_path:
             os.makedirs(os.path.dirname(self._storage_path), exist_ok=True)
-            with open(self._storage_path, 'w') as f:
+            # Atomic write: tmp + rename prevents corruption from concurrent writers
+            tmp_path = self._storage_path + ".tmp"
+            with open(tmp_path, 'w') as f:
                 json.dump(self.to_dict(), f, indent=2)
+            os.replace(tmp_path, self._storage_path)
 
     def _load(self) -> None:
         if not self._storage_path or not os.path.exists(self._storage_path):

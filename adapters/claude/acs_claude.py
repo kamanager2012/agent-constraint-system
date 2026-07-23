@@ -28,7 +28,7 @@ AUDIT_LOG = RUNTIME_DIR / "tool-audit.jsonl"
 
 audit = AuditLogger(AUDIT_LOG)
 ledger = AssetLedger(str(RUNTIME_DIR / "asset_ledger.json"))
-safe_mode = SafeMode()
+safe_mode = SafeMode(str(RUNTIME_DIR / "safe_mode.json"))
 
 
 def _deny(reason):
@@ -40,7 +40,11 @@ def handle_bash(data):
     cmd = data.get("tool_input", {}).get("command", "").strip()
     if not cmd:
         return
-    if "acs_claude.py unlock" in cmd:
+    # Exact-match bypass for unlock/reset CLI (substring match is a bypass vector)
+    tokens = cmd.split()
+    if len(tokens) >= 2 and tokens[-2] == "unlock" and "--confirm" in tokens:
+        return
+    if len(tokens) >= 3 and tokens[-3] == "reset" and "--force" in tokens and "--confirm" in tokens:
         return
     result = check_bash_with_context(cmd, asset_ledger=ledger, error_count=safe_mode.error_count())
     if result["decision"] == "BLOCK":

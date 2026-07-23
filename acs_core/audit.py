@@ -47,8 +47,25 @@ class AuditLogger:
                     pass
         return entries
 
+    def _counts(self) -> tuple[int, int]:
+        """Single-pass count of (total, denied). Avoids re-parsing JSONL twice."""
+        total = 0
+        denied = 0
+        if not self.log_path.exists():
+            return 0, 0
+        with open(self.log_path) as f:
+            for line in f:
+                try:
+                    entry = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                total += 1
+                if entry.get("outcome") == "deny":
+                    denied += 1
+        return total, denied
+
     def denied_count(self) -> int:
-        return sum(1 for e in self.entries() if e.get("outcome") == "deny")
+        return self._counts()[1]
 
     def total_count(self) -> int:
-        return len(self.entries())
+        return self._counts()[0]

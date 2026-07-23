@@ -173,7 +173,7 @@ class AssetLedger:
             return "CONFIRM: authorized but no verified copy"
 
         # Critical asset: recovered from history or agent-created, no copy, no backup, not authorized
-        if entry.origin in ("recovered_from_history", "agent_write") and not entry.verified_copy and not entry.backup_location:
+        if entry.origin in ("recovered_from_history", "agent_generated") and not entry.verified_copy and not entry.backup_location:
             return "BLOCK: critical_asset_no_copy_no_backup"
 
         # Has backup: confirm
@@ -211,8 +211,11 @@ class AssetLedger:
         if self._storage_path:
             data = {k: v.to_dict() for k, v in self._assets.items()}
             os.makedirs(os.path.dirname(self._storage_path), exist_ok=True)
-            with open(self._storage_path, 'w') as f:
+            # Atomic write: tmp file + rename prevents corruption from concurrent writers
+            tmp_path = self._storage_path + ".tmp"
+            with open(tmp_path, 'w') as f:
                 json.dump(data, f, indent=2)
+            os.replace(tmp_path, self._storage_path)
 
     def _load(self) -> None:
         try:

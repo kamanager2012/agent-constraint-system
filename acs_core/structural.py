@@ -12,11 +12,43 @@ v0.3.x 缺陷修复:
 """
 from __future__ import annotations
 
+import os
 import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-from acs_paths import is_abi_protected, resolve, _safe_resolve
+# ── Self-contained path helpers (previously from acs_paths, which is hooks-only) ──
+PROJECT: Path = Path(os.getcwd())
+
+
+def _safe_resolve(p: Path) -> Path:
+    """Return absolute path without following symlinks."""
+    return Path(os.path.abspath(p))
+
+
+def resolve(path_str: str) -> Path:
+    """Absolute paths pass through; relative paths anchor to PROJECT."""
+    p = Path(path_str)
+    if p.is_absolute():
+        return _safe_resolve(p)
+    return _safe_resolve(PROJECT / p)
+
+
+# ── ABI protection (copied from acs_paths to make acs_core self-contained) ──
+_ABI_EXCLUDE_RE: re.Pattern = re.compile(
+    r"(node_modules|dist|build|\.git|__pycache__|archive|target)/", re.I
+)
+_ABI_PROTECTED_PATTERNS: List[str] = [
+    r".*/types\.tsx?$", r".*/contracts?\.tsx?$", r".*/event-bus\.tsx?$",
+    r".*/interfaces?\.tsx?$", r".*/index\.tsx?$", r".*\.d\.ts$",
+]
+_ABI_COMPILED: List[re.Pattern] = [re.compile(p, re.I) for p in _ABI_PROTECTED_PATTERNS]
+
+
+def is_abi_protected(file_path: str) -> bool:
+    if _ABI_EXCLUDE_RE.search(file_path):
+        return False
+    return any(p.search(file_path) for p in _ABI_COMPILED)
 
 SHRINK_RATIO: float = 0.5
 SUPPORTED_SUFFIXES = (".ts", ".tsx", ".js", ".jsx", ".py", ".go", ".rs", ".swift", ".kt")
@@ -51,7 +83,7 @@ def count_structures(text: str) -> Dict[str, int]:
         return {"lines": 0, "exports": 0, "interfaces": 0,
                 "types": 0, "enums": 0, "classes": 0, "functions": 0}
     return {
-        "lines": text.count("\n") + (0 if text.endswith("\n") else 1) if text else 0,
+        "lines": text.count("\n") + (0 if text.endswith("\n") else 1),
         "exports": len(_EXPORT.findall(text)),
         "interfaces": len(_INTERFACE.findall(text)),
         "types": len(_TYPE.findall(text)),
