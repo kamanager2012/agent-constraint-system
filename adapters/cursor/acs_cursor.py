@@ -42,6 +42,8 @@ def handle_bash(data):
     if not cmd or "acs_cursor.py unlock" in cmd:
         return
     result = check_bash_with_context(cmd, asset_ledger=ledger, error_count=safe_mode.error_count())
+    if result["decision"] == "BLOCK":
+        ws, locked, _ = add_violation(VIOLATIONS_FILE, LOCK_FILE, f"dangerous_command:{cmd[:200]}", 100)
     if result["decision"] in ("BLOCK", "CONFIRM"):
         _deny(result["reason"])
     if should_lock(load_violations(VIOLATIONS_FILE)):

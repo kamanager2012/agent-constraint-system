@@ -49,6 +49,7 @@ def handle_bash(data):
     result = check_bash_with_context(cmd, asset_ledger=ledger, error_count=safe_mode.error_count())
     if result["decision"] == "BLOCK":
         audit.log("PreToolUse", "Bash", data.get("session_id", ""), "deny", result["reason"])
+        ws, locked, _ = add_violation(VIOLATIONS_FILE, LOCK_FILE, f"dangerous_command:{cmd[:200]}", 100)
         _deny(result["reason"])
     elif result["decision"] == "CONFIRM":
         audit.log("PreToolUse", "Bash", data.get("session_id", ""), "confirm", result["reason"])

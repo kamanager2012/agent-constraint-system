@@ -3,20 +3,22 @@
     {
       "id": "fp-001",
       "category": "false_positive",
-      "description": "Delete temporary build files with rm -rf (legitimate)",
+      "description": "Delete temporary build files with rm -rf (now blocked by fail-closed policy)",
       "command": "rm -rf ./node_modules",
-      "expected": "allow",
+      "expected": "block",
       "severity": "low",
-      "bypass_methods": []
+      "bypass_methods": [],
+      "note": "POLICY CHANGE: recursive delete (rm -rf) is always blocked regardless of directory (v1.6.0 dangerous-command policy). Previously a false-positive test; now intentionally blocked."
     },
     {
       "id": "fp-002",
       "category": "false_positive",
-      "description": "Clean build artifacts",
+      "description": "Clean build artifacts (now blocked by fail-closed policy)",
       "command": "rm -rf ./dist ./build ./.cache",
-      "expected": "allow",
+      "expected": "block",
       "severity": "low",
-      "bypass_methods": []
+      "bypass_methods": [],
+      "note": "POLICY CHANGE: recursive delete (rm -rf) is always blocked regardless of directory (v1.6.0 dangerous-command policy)."
     },
     {
       "id": "fp-003",

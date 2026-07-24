@@ -222,6 +222,12 @@ def _check_bash(data: dict) -> tuple:
     if blocked:
         return True, reason
 
+    # 0.5 FAIL-CLOSED: 任何递归删除 (`rm -r` / `rm -rf` / `rm -fr` / `rm -Rf`，
+    # 不论目标目录) 一律拦截，无需审核。与 claude/codebuddy 引擎及 adapters 的
+    # "危险命令直接拒绝并扣分" 策略保持一致。
+    if re.search(r"\brm\b\s+-[a-zA-Z]*[rR][a-zA-Z]*\b", cmd):
+        return True, f"危险命令 rm 递归删除已拦截（任何目录）: {cmd[:100]}"
+
     # 1. READ-ONLY: 纯只读命令白名单 → 无条件放行
     READ_ONLY = frozenset({
         "ls", "cat", "head", "tail", "less", "more", "stat", "file", "wc",

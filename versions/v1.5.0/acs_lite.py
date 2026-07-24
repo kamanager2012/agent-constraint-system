@@ -150,6 +150,11 @@ BASELINE_DENY_COMPILED = [(re.compile(p, re.I), desc) for p, desc in BASELINE_DE
 # 危险 Bash 模式（行为语义分类）─ v5.0 去重，单一定义 ──────────
 DANGEROUS_BASH: List[Tuple[str, str]] = [
     # DELETE 类 ──────────────────────────────────
+    # FAIL-CLOSED core policy: any recursive remove (`rm -r` / `rm -rf` /
+    # `rm -fr` / `rm -Rf`, bare or any target) is ALWAYS blocked, regardless
+    # of target directory. No CONFIRM. Scores as SYSTEM (100 → 秒锁) so the
+    # "dangerous command → block + deduct" rule is uniform across all engines.
+    (r"\brm\b\s+-[a-zA-Z]*[rR][a-zA-Z]*\b", "rm recursive (rm -rf) — always blocked"),
     (r"(?:^|[|;&]\s*)rm\s+-[a-zA-Z]*[rf]\s+/(?:\s|$)",   "rm -rf /"),
     (r"(?:^|[|;&]\s*)rm\s+-[a-zA-Z]*[rf]\s+\*",          "rm -rf *"),
     (r"(?:^|[|;&]\s*)rm\s+-[a-zA-Z]*[rf]\s+~",            "rm -rf ~"),
@@ -196,6 +201,7 @@ COMPILED_BASH: List[Tuple[re.Pattern, str]] = [
 # 行为分类映射表 — v5.0 唯一正规定义 (消除 v1.2.0 的重复 bug) ──
 CATEGORY_MAP: Dict[str, str] = {
     # DELETE
+    "rm recursive (rm -rf) — always blocked": "SYSTEM",
     "rm -rf /":              "DELETE",  "rm -rf *":         "DELETE",
     "rm -rf ~":              "DELETE",  "rm -rf project":   "DELETE",
     "rm file":               "DELETE",  "truncate to zero": "DELETE",

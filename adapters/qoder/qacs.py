@@ -45,6 +45,7 @@ def handle_bash(data: dict) -> None:
     result = check_bash(cmd)
     if result:
         audit.log("PreToolUse", "Bash", data.get("session_id", ""), "deny", result)
+        ws, locked, _ = add_violation(VIOLATIONS_FILE, LOCK_FILE, f"dangerous_command:{cmd[:200]}", 100)
         _deny(result)
     if should_lock(load_violations(VIOLATIONS_FILE)):
         _deny(f"System locked (window={window_score(load_violations(VIOLATIONS_FILE))})")

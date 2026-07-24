@@ -14,6 +14,13 @@ _AGENT_SUB = r"(?:hooks|runtime|governance|agent-hooks|cacs_runtime|gacs_runtime
 
 DANGEROUS_BASH: List[Tuple[str, str]] = [
     # DELETE
+    # RECURSIVE DELETE — fail-closed core policy: any recursive remove
+    # (`rm -r` / `rm -rf` / `rm -fr` / `rm -Rf`, bare or with any target) is
+    # ALWAYS blocked, regardless of directory. No review (CONFIRM), no
+    # per-directory exception. This is the dangerous-command policy: recursive
+    # delete is never permitted. (Score penalty is applied by the adapters'
+    # handle_bash on the resulting BLOCK.)
+    (r"\brm\b\s+-[a-zA-Z]*[rR][a-zA-Z]*\b", "rm recursive (rm -rf) — always blocked"),
     (r"(?:^|[|;&]|\s*&&\s*|\s*\|\|\s*)\s*rm\s+-[a-zA-Z]*[rf]\s+/(?:\s|$)",       "rm -rf /"),
     (r"(?:^|[|;&]|\s*&&\s*|\s*\|\|\s*)\s*rm\s+-[a-zA-Z]*[rf]\s+/\*",             "rm -rf /*"),
     (r"(?:^|[|;&]|\s*&&\s*|\s*\|\|\s*)\s*rm\s+-[a-zA-Z]*[rf]\s+\*",              "rm -rf *"),
