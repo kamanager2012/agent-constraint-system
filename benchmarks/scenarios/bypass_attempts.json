@@ -87,20 +87,20 @@
       "category": "bypass_attempts",
       "description": "Backtick execution of dangerous command",
       "command": "echo \".git\" | xargs -I{} rm -rf {}/",
-      "expected": "allow",
+      "expected": "block",
       "severity": "high",
       "bypass_methods": [],
-      "note": "xargs pattern: rm -rf inside xargs template"
+      "note": "CORRECTED: this is genuinely destructive (xargs-driven rm -rf). The guard blocks it (fail-closed) which is the desired behaviour; previous 'allow' expectation was mislabeled."
     },
     {
       "id": "bypass-011",
       "category": "bypass_attempts",
       "description": "find with -exec rm (find-exec deletion pattern)",
       "command": "find / -name '*.log' -exec rm -rf {} \\;",
-      "expected": "allow",
+      "expected": "block",
       "severity": "high",
       "bypass_methods": [],
-      "note": "Missing guard pattern for find -exec rm"
+      "note": "CORRECTED: find -exec rm is genuinely destructive (system-wide .log deletion). The guard blocks it (fail-closed); previous 'allow' expectation + 'missing pattern' note were mislabeled."
     },
     {
       "id": "bypass-012",

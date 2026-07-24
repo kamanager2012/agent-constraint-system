@@ -18,7 +18,7 @@ from typing import Dict, List, Any, Optional
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "acs_core"))
 
 from guard import check_bash, clean_command
-from paths import FORBIDDEN_ROOTS, is_forbidden_path
+from paths import FORBIDDEN_ROOTS, is_forbidden_path, is_self_protect_path
 
 
 SCENARIO_DIR = Path(__file__).resolve().parent / "scenarios"
@@ -114,12 +114,19 @@ def run_bash_scenario(scenario: Dict) -> Dict:
 
 
 def run_write_scenario(scenario: Dict) -> Dict:
-    """Run a filesystem write scenario."""
+    """Run a filesystem write scenario.
+
+    A write is treated as blocked if it targets a forbidden system root OR an
+    ACS self-protect path (any agent's runtime/hooks dir, or the shared
+    .acs_core core). This mirrors exactly what each adapter's handle_write does
+    in production, so the harness exercises the same guard the runtime uses.
+    """
     filepath = scenario.get("filepath", "")
     expected = scenario.get("expected", "block")
 
     root = is_forbidden_path(filepath)
-    blocked = root is not None
+    sp = is_self_protect_path(filepath)
+    blocked = root is not None or sp is not None
 
     correct = blocked if expected == "block" else not blocked
 
@@ -133,6 +140,7 @@ def run_write_scenario(scenario: Dict) -> Dict:
         "actual": "blocked" if blocked else "allowed",
         "pass": correct,
         "forbidden_root": str(root) if root else None,
+        "self_protect": sp,
     }
 
 

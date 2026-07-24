@@ -6,19 +6,30 @@ from typing import List, Optional, Tuple
 
 # -- Dangerous Bash patterns --
 
+# ACS self-protect: one source of truth for agent dirs + protected subdirs.
+# Mirrors paths.AGENT_BASE_DIRS / paths.AGENT_PROTECTED_SUBDIRS so the Bash
+# guard and the Write guard block exactly the same locations.
+_AGENT = r"(?:claude|codebuddy|codex|cursor|gemini|grok|hermes|opencode|qoder-cn|acs_core)"
+_AGENT_SUB = r"(?:hooks|runtime|governance|agent-hooks|cacs_runtime|gacs_runtime|grok_acs_runtime|hacs_runtime|qacs_runtime)"
+
 DANGEROUS_BASH: List[Tuple[str, str]] = [
     # DELETE
-    (r"(?:^|[|;&]\s*)rm\s+-[a-zA-Z]*[rf]\s+/(?:\s|$)",       "rm -rf /"),
-    (r"(?:^|[|;&]\s*)rm\s+-[a-zA-Z]*[rf]\s+/\*",             "rm -rf /*"),
-    (r"(?:^|[|;&]\s*)rm\s+-[a-zA-Z]*[rf]\s+\*",              "rm -rf *"),
-    (r"(?:^|[|;&]\s*)rm\s+-[a-zA-Z]*[rf]\s+~",                "rm -rf ~"),
-    (r"(?:^|[|;&]\s*)rm\s+-[a-zA-Z]*[rf]\s+\S*(?:PROJ|REPO|project|repo)\b", "rm -rf project/repo"),
+    (r"(?:^|[|;&]|\s*&&\s*|\s*\|\|\s*)\s*rm\s+-[a-zA-Z]*[rf]\s+/(?:\s|$)",       "rm -rf /"),
+    (r"(?:^|[|;&]|\s*&&\s*|\s*\|\|\s*)\s*rm\s+-[a-zA-Z]*[rf]\s+/\*",             "rm -rf /*"),
+    (r"(?:^|[|;&]|\s*&&\s*|\s*\|\|\s*)\s*rm\s+-[a-zA-Z]*[rf]\s+\*",              "rm -rf *"),
+    (r"(?:^|[|;&]|\s*&&\s*|\s*\|\|\s*)\s*rm\s+-[a-zA-Z]*[rf]\s+~",                "rm -rf ~"),
+    (r"(?:^|[|;&]|\s*&&\s*|\s*\|\|\s*)\s*rm\s+-[a-zA-Z]*[rf]\s+\S*(?:PROJ|REPO|project|repo)\b", "rm -rf project/repo"),
     (r"\btruncate\s+-s\s+0",                                   "truncate to zero"),
+    # FIND with delete/exec (bypasses rm -rf pattern checks)
+    (r"\bfind\b.*\s+-exec\s+(?:rm|sh|bash|python)\b",            "find -exec (dangerous)"),
+    (r"\bfind\b.*\s+-delete\b",                                   "find -delete (destroys files)"),
+    # xargs with dangerous commands
+    (r"\bxargs\b.*\brm\s+-[rf]",                                "xargs rm (via pipeline)"),
 
     # SYSTEM
-    (r"(?:^|[|;&]\s*)kill\s+-9\b",                             "kill -9 (force kill)"),
-    (r"(?:^|[|;&]\s*)mkfs\.",                                   "mkfs (disk format)"),
-    (r"(?:^|[|;&]\s*)dd\s+if=/dev/",                           "dd writing to block device"),
+    (r"(?:^|[|;&]|\s*&&\s*|\s*\|\|\s*|sudo\s+|exec\s+|env\s+|nice\s+|command\s+)*\s*kill\s+-9\b",  "kill -9 (force kill)"),
+    (r"\bmkfs(?:\.\w+|\s+-t\s+\w+)",                            "mkfs (disk format)"),
+    (r"(?:^|[|;&]|\s*&&\s*|\s*\|\|\s*|sudo\s+|exec\s+|env\s+|nice\s+|command\s+)*\s*dd\s+if=/dev/","dd writing to block device"),
     (r"\breboot\b",                                             "reboot"),
     (r"\bshutdown\b",                                           "shutdown"),
     (r":\(\s*\)\s*\{",                                         "fork bomb (colon style)"),
@@ -34,6 +45,9 @@ DANGEROUS_BASH: List[Tuple[str, str]] = [
     (r"\bxxd\s+-r\s+-p.*\|.*(?:ba)?sh\b",                    "xxd decode pipe to shell"),
     (r"\bopenssl\s+(?:base64|enc)\s+-d.*\|.*(?:ba)?sh\b",   "openssl decode pipe to shell"),
     (r"\b(?:nc|ncat)\s+.*\|\s*(?:ba)?sh\b",                   "netcat pipe to shell"),
+    # Alternative decoders (Python, Perl, Ruby)
+    (r"\b(?:python3?|perl|ruby)\s+-[ce]\s+(?:import\s+base64|MIME::Base64|Base64)", "scripted base64 decode"),
+    (r"\bpython3?\s+-c\s+.*base64.*\.decode\(",               "python base64 decode"),
     # Nested decode inside command substitution
     (r"sh\s+-c\s+.*\$\(.*(?:base64|xxd|openssl).*\|\s*(?:ba)?sh", "nested decode in subshell"),
     (r"\bsh\s+-c\s+.*\$\(.*base64.*-d.*\)",                   "sh -c with base64 decode subshell"),
@@ -41,6 +55,8 @@ DANGEROUS_BASH: List[Tuple[str, str]] = [
     (r"\bgit\s+\$\w+\s+\$\w+",                                "git with variable arguments"),
     # Alias definition + execution in same command
     (r"\balias\s+(\w+)=.*;\s*\1\b",                           "alias definition then execution"),
+    # EVAL bypass: eval with any substitution mechanism
+    (r"\beval\s+(?:\$\(|`|\"|\$)\S*",                         "eval with substitution (potential bypass)"),
 
     # WRITE
     (r"\bchmod\s+777\b",                                       "chmod 777"),
@@ -66,13 +82,24 @@ DANGEROUS_BASH: List[Tuple[str, str]] = [
     (r"\b(?:wget|curl)\b.*\|\s*(?:sh|bash)\b",                "download pipe shell"),
     (r"\bcurl.*\|.*(?:ba)?sh",                                  "curl-pipe-shell"),
 
-    # ACS SELF-PROTECT
-    (r"\bchmod\s+.*-[a-z]*x[a-z]*.*acs_",                      "chmod on ACS engine"),
-    (r"(?:cat|tee|dd|cp|mv)\s+.*>\s*\S*acs_",                 "ACS tamper: engine"),
-    (r"(?:cat|tee|dd)\s+.*>\s*\S*\.claude/(?:hooks|runtime)/", "ACS tamper: hooks/runtime"),
-    (r"(?:cat|tee|dd)\s+.*>\s*\S*\.codebuddy/(?:hooks|runtime)/","ACS tamper: codebuddy"),
-    (r"rm\s+\S*\.(?:claude|codebuddy)/(?:hooks|runtime|governance)", "ACS tamper: delete"),
-    (r"sed\s+-i.*\.(?:claude|codebuddy)/(?:hooks|runtime)",     "ACS tamper: sed"),
+    # ── ACS SELF-PROTECT ── covers ALL 9 supported agent runtime/hooks dirs ──
+    # Agent base dirs + protected subdirs (kept here so every pattern below
+    # shares one source of truth; see also paths.AGENT_BASE_DIRS).
+    (r"\bchmod\s+.*-[a-z]*x[a-z]*.*(?:acs_|" + _AGENT + r")", "chmod on ACS engine"),
+    (r"(?:cat|tee|dd|cp|mv)\s+.*>\s*\S*(?:acs_|" + _AGENT + r"/)", "ACS tamper: engine"),
+    # Redirect (echo/cat/tee/dd >, including >>) into any agent runtime/hooks dir
+    (r">>?\s*\S*?\." + _AGENT + r"/" + _AGENT_SUB, "ACS tamper: redirect into runtime/hooks"),
+    # Destructive file ops (rm/mv/cp/truncate/shred) on agent runtime/hooks dirs.
+    # NOTE: .*? (not \S*) so it survives the space inside "rm -rf /path".
+    (r"\b(?:rm|mv|cp|truncate|shred)\b(?:\s+-[a-zA-Z]+)*\s+.*?\.?" + _AGENT + r"/" + _AGENT_SUB,
+     "ACS tamper: agent runtime/hooks"),
+    # in-place edit of agent runtime/hooks files
+    (r"\bsed\b\s+-i\b.*?\.?" + _AGENT + r"/" + _AGENT_SUB, "ACS tamper: sed -i agent dir"),
+    # symlink injection into agent runtime/hooks
+    (r"\bln\s+-s[f]?\s+.*?\.?" + _AGENT + r"/" + _AGENT_SUB, "ACS tamper: symlink into agent dir"),
+    # Absolute-path rm bypass for destructive commands
+    (r"(?:^|[|;&]|\s*&&\s*|\s*\|\|\s*|sudo\s+|exec\s+|env\s+|nice\s+)\s*(?:/usr)?/bin/rm\s+-[a-zA-Z]*[rf]\s+/",
+     "rm via absolute path"),
 ]
 
 COMPILED_DANGEROUS = [(re.compile(p, re.IGNORECASE), desc) for p, desc in DANGEROUS_BASH]
@@ -107,7 +134,37 @@ def clean_command(cmd: str) -> str:
     return result
 
 
+# -- Command splitting --
+
+def _split_commands(cmd: str) -> list[str]:
+    """Split command on shell chaining operators (&&, ||, ;, |, newline)
+    into individual sub-commands. Each sub-command is checked independently
+    to prevent bypasses like "true && rm -rf /".
+    """
+    # Split preserving | for pipe chains (we check the whole pipe)
+    # But split on command separators: &&, ||, ;, newlines
+    parts = re.split(r'\s*&&\s*|\s*\|\|\s*|[;&]\s*|\n', cmd)
+    return [p.strip() for p in parts if p.strip()]
+
+
+def _strip_prefix(cmd: str) -> str:
+    """Strip privilege elevation and environment prefixes from command."""
+    return re.sub(r'^(?:sudo|exec|env|nice|ionice|nohup|command|time)\s+', '', cmd, count=3)
+
+
 # -- Guard check --
+
+# Patterns that MUST see the whole (un-split) command. Fork bombs and
+# alias-definition-then-exec contain ; & | *inside* them, which the
+# sub-command splitter would otherwise shred and let through.
+_WHOLE_CMD_PATTERNS = [
+    (re.compile(r"\w+\(\s*\)\s*\{[^}]*\|[^}]*&\s*[^}]*\}", re.I),
+     "fork bomb (named func style)"),
+    (re.compile(r":\(\s*\)\s*\{", re.I),
+     "fork bomb (colon style)"),
+    (re.compile(r"\balias\s+\w+=.*;\s*\w+\b", re.I),
+     "alias definition then execution"),
+]
 
 # Compiled once at import time (was recompiled on every check_bash call)
 _BYPASS_PATTERNS = [
@@ -120,6 +177,15 @@ _BYPASS_PATTERNS = [
     # sh -c with encoded content in subshell (before quote stripping)
     (re.compile(r"\bsh\s+-c\s+.*\$\(.*(?:base64|xxd|openssl).*(?:-d|--decode).*\)", re.I),
      "sh -c with encoded subshell"),
+    # Alternative decoders: python/perl with base64 (before quote stripping)
+    (re.compile(r"\b(?:python3?|perl|ruby)\s+-[ce].*(?:base64|MIME::Base64|\.decode\()", re.I),
+     "scripted base64 decode"),
+    # Variable indirection: $VAR containing dangerous paths
+    (re.compile(r"\b(?:export\s+)?\w+\s*=\s*(?:rm|dd|mkfs|kill|chmod)\b", re.I),
+     "variable assignment of dangerous command"),
+    # eval with sub-shell (potential full bypass)
+    (re.compile(r"\beval\s+(?:\$\(|`|\")", re.I),
+     "eval with substitution (potential bypass)"),
 ]
 
 
@@ -133,17 +199,36 @@ def check_bash(command: str) -> str | None:
         if pattern.search(command):
             return f"Dangerous command blocked: {desc}"
 
-    # Second pass: clean command and check all patterns
-    cleaned = clean_command(command)
-
-    for pattern, desc in COMPILED_DANGEROUS:
-        if pattern.search(cleaned):
+    # Whole-command pass: fork bombs / alias-def-exec contain ; & | inside
+    # them, so they must be matched before sub-command splitting.
+    for pattern, desc in _WHOLE_CMD_PATTERNS:
+        if pattern.search(command):
             return f"Dangerous command blocked: {desc}"
 
-    # Git patterns run on cleaned command (avoids false positives from commit messages)
-    for pattern, desc in COMPILED_GIT:
-        if pattern.search(cleaned):
-            return f"Destructive git blocked: {desc}"
+    # Split into sub-commands (handles &&, ||, ; chaining bypasses)
+    sub_commands = _split_commands(command)
+
+    for sub_cmd in sub_commands:
+        # Strip privilege prefixes (sudo, exec, env, etc.)
+        stripped = _strip_prefix(sub_cmd)
+
+        # Clean and check each sub-command independently
+        cleaned = clean_command(stripped)
+
+        for pattern, desc in COMPILED_DANGEROUS:
+            if pattern.search(cleaned):
+                return f"Dangerous command blocked: {desc}"
+
+        # Also check original (un-stripped) for patterns that look for prefix contexts
+        cleaned_orig = clean_command(sub_cmd)
+        for pattern, desc in COMPILED_DANGEROUS:
+            if pattern.search(cleaned_orig) and pattern.search(cleaned) is None:
+                return f"Dangerous command blocked: {desc}"
+
+        # Git patterns run on cleaned command
+        for pattern, desc in COMPILED_GIT:
+            if pattern.search(cleaned):
+                return f"Destructive git blocked: {desc}"
 
     return None
 
