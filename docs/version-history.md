@@ -7,6 +7,8 @@ Versioning was normalized to Semantic Versioning starting with v1.5.0 on 2026-07
 
 | Current (SemVer) | Previous (Internal) | Date | Summary |
 |------------------|---------------------|------|---------|
+| v1.6.1 | — | 2026-07-25 | Dangerous-command fail-closed policy (recursive rm always blocked) + scoring on every Bash block |
+| v1.6.0 | — | 2026-07-25 | Self-protect filesystem-level hardening (is_self_protect_path across all agent dirs) |
 | v1.5.0 | v5.3.0 / v6.1.0 | 2026-07-22 | Asset Ledger + Safe Mode + 3-level benchmark |
 | v1.4.0 | v5.0 | 2026-06-06 | Policy engine, multi-agent governance, hook orchestrator |
 | v1.3.0 | v4.3 | (planned) | Standalone install, environment variables, relative paths |

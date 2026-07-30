@@ -1,4 +1,4 @@
-# ACS v1.5.0 架构
+# ACS v1.6.1 架构
 
 ## Hook 管线
 
@@ -23,7 +23,7 @@ Stop
 ## 引擎架构
 
 ```
-acs_lite.py (v1.5.0 主引擎)
+acs_lite.py (v1.6.1 主引擎)
   ├── 路径解析 + ZONE 分区
   ├── ACS_SELF_PROTECT: hooks/ + runtime/ + settings.json + CLAUDE.md + .claude.json
   ├── 滑动窗口违规追踪 (600s window, WINDOW_THRESHOLD=80, HARD_LOCK=150)

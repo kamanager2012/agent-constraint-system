@@ -1,5 +1,5 @@
 {
-  "description": "CACS v2.0 \u2014 Codex ACS (orchestrator mode)",
+  "description": "Codex ACS (orchestrator mode)",
   "hooks": {
     "SessionStart": [
       {

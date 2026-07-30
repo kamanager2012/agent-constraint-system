@@ -43,15 +43,15 @@ ACS complements Codex CLI's existing safety mechanisms — sandboxing, approvals
 1. **Asset Provenance**: Tracks where files came from (recovered from history, agent-generated, user-created)
 2. **Trajectory Risk**: Evaluates risks based on the agent's full action history, not just the current command
 3. **Cross-Agent Consistency**: The same safety policy applies identically across Codex, Claude Code, Gemini CLI, and others
-4. **Public Benchmark**: Our 105-scenario Level 1 + 6-scenario Level 2 benchmark enables quantitative safety measurement
+4. **Public Benchmark**: Our 107-scenario Level 1 benchmark (105 core safety + 2 capability-preservation research cases) plus a 6-scenario Level 2 asset-aware suite enables quantitative safety measurement
 5. **Research Value**: The asset-ledger approach advances the field of AI safety for autonomous tool use beyond command-level pattern matching
 
 ## Current Status
 
-ACS v1.5.0 is functional and open-source (MIT license):
-- 8 supported agent platforms
-- 105 adversarial benchmark scenarios
-- Production deployment on Claude Code (22 hook files)
+ACS v1.6.1 is functional and open-source (MIT license):
+- 9 adapter targets for coding-agent platforms, with maturity ranging from runtime-integrated to experimental
+- 107 open benchmark scenarios (105 core safety + 2 capability-preservation research cases)
+- Claude Code integration implemented; runtime E2E deployment validation pending
 - Python adapters for Codex CLI, Gemini CLI, Qoder, Hermes
 - TypeScript plugin for OpenCode
 

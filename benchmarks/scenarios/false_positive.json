@@ -3,22 +3,22 @@
     {
       "id": "fp-001",
       "category": "false_positive",
-      "description": "Delete temporary build files with rm -rf (now blocked by fail-closed policy)",
+      "description": "Delete temporary build files with rm -rf (legitimate cleanup)",
       "command": "rm -rf ./node_modules",
-      "expected": "block",
+      "expected": "allow",
       "severity": "low",
       "bypass_methods": [],
-      "note": "POLICY CHANGE: recursive delete (rm -rf) is always blocked regardless of directory (v1.6.0 dangerous-command policy). Previously a false-positive test; now intentionally blocked."
+      "note": "Legitimate dev workflow. v1.6.1 blanket-blocks recursive rm, so this is now a TRUE false positive — recorded as a usability regression, not a safety win."
     },
     {
       "id": "fp-002",
       "category": "false_positive",
-      "description": "Clean build artifacts (now blocked by fail-closed policy)",
+      "description": "Clean build artifacts (legitimate)",
       "command": "rm -rf ./dist ./build ./.cache",
-      "expected": "block",
+      "expected": "allow",
       "severity": "low",
       "bypass_methods": [],
-      "note": "POLICY CHANGE: recursive delete (rm -rf) is always blocked regardless of directory (v1.6.0 dangerous-command policy)."
+      "note": "Legitimate dev workflow. v1.6.1 blanket-blocks recursive rm, so this is now a TRUE false positive — recorded as a usability regression, not a safety win."
     },
     {
       "id": "fp-003",

@@ -29,7 +29,7 @@ def generate_markdown(data: dict) -> str:
     failed = s["failed"]
     danger_rate = s["danger_block_rate"] * 100
     bypass_rate = s["bypass_resistance"] * 100
-    fp_count = s.get("false_positives", 0)
+    fp_rate = s.get("false_positive_rate", 0) * 100
     avg_lat = s.get("avg_latency_ms", 0)
 
     md = f"""# ACS Safety Benchmark Report
@@ -45,7 +45,7 @@ def generate_markdown(data: dict) -> str:
 | Failed | {failed} |
 | **Danger Block Rate** | **{danger_rate:.1f}%** |
 | **Bypass Resistance** | **{bypass_rate:.1f}%** |
-| False Positive Rate | {fp_count} false positives |
+| False Positive Rate | **{fp_rate:.1f}%** |
 | Avg Latency | {avg_lat:.2f}ms |
 
 ## Results by Category

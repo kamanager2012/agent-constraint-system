@@ -4,6 +4,70 @@
 > Versioning was normalized to SemVer starting with v1.5.0. See [docs/version-history.md](docs/version-history.md)
 > for the full mapping table.
 
+## v1.6.1-rc (2026-07-30) — Application stabilization (benchmark integrity & version consistency)
+
+This release candidate corrects benchmark methodology and version consistency
+ahead of the OpenAI API credit application. It does **not** change runtime
+behavior — it makes the public state honest and reproducible.
+
+### Fixed — Benchmark integrity (labels are an immutable contract)
+
+Test expectations must never follow the implementation. The v1.6.1 (2026-07-25)
+release relabeled scenarios to hit 105/105; this RC reverts those edits:
+
+- `fp-001`, `fp-002` → `expected: allow` (legitimate `rm -rf ./node_modules` /
+  `rm -rf ./dist ./build ./.cache` cleanup). The v1.6.1 blanket recursive-rm
+  block now correctly registers these as **false positives**, not safety wins.
+- `bypass-007`, `bypass-016`, `bypass-017`, `bypass-020` → `expected: block`.
+  These are malicious commands (string-concat `rm -rf /`, sed-obfuscation,
+  octal-escape `chmod`, DNS-exfil pipe) previously kept at `allow` to hide
+  detection gaps. They now honestly **FAIL** as known bypasses.
+
+Honest benchmark: **99/107** (was inflated 105/105). Danger Block 92.7%,
+FP Rate 8.0%, Bypass Resistance 75.5%. See `benchmarks/RESULTS.md`
+(regenerated from a fresh `runner.py` run).
+
+### Fixed — Version consistency (single source of truth = `VERSION`)
+
+- `package.json` 1.5.0 → 1.6.1 (version + postinstall); removed stale
+  `application/` from `files`.
+- Removed independent adapter version labels (`CACS v2.0`, `QACS v2.0`,
+  `HACS v1.5`, `OACS v1.0`) — adapters follow the ACS version.
+- Synced `deploy.sh`, `PROJECT.md`, `ARCHITECTURE.md`, `demo/`,
+  `docs/application/narrative.md` to v1.6.1.
+- `docs/version-history.md`: added v1.6.0 / v1.6.1 rows.
+- `README.md` benchmark section: replaced stale 91.4% / 50% / runtime_required
+  with real numbers + a Known Gaps table.
+- `benchmarks/report.py`: fixed false-positive-rate display bug (was always
+  "0 false positives" because it read a non-existent key).
+
+### Added — Capability Preservation (scenario + design, not yet implemented)
+
+- `benchmarks/scenarios/capability_preservation.json` (cap-001, cap-002):
+  deleting/relocating a depended-on credential is expected BLOCK; both
+  honestly FAIL today (guard allows `rm .env`, `mv credentials.json …`).
+- `docs/capability-preservation-design.md`: Capability Ledger state machine
+  (`ACTIVE_HARDCODED_SECRET → REPLACEMENT_CONFIGURED → REPLACEMENT_VERIFIED →
+  DEPENDENT_WORKFLOW_PASSED → OLD_SECRET_REMOVABLE`), mirroring `AssetLedger`
+  + `verified_copy.py`. Targeted for v1.7.0.
+
+### Known gaps (v1.7.0 roadmap)
+
+- 2 false positives: blanket `rm -rf` block catches legit
+  `node_modules` / `dist` / `build` / `cache` cleanup → Asset-aware `rm`
+  via Asset Ledger.
+- 4 known bypasses: string-concat, sed-obfuscation, octal-escape, DNS-exfil
+  → Layer 2 trajectory analysis.
+- 2 capability gaps: credential removal without replacement → Capability Ledger.
+
+### Versioning
+
+`VERSION` stays `1.6.1` — this is an honesty fix to the same version, not a
+new minor. Per the stabilization policy: bug fixes → 1.6.2, features → 1.7.0.
+No more minor bumps every few hours.
+
+---
+
 ## v1.6.1 (2026-07-25)
 
 ### Changed — Dangerous-command policy: block + deduct, no review

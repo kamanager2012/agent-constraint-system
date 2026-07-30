@@ -1,4 +1,4 @@
-// index.ts — OACS v1.0 OpenCode Plugin
+// index.ts — OpenCode Plugin (ACS)
 // Agent Constraint System for OpenCode CLI
 
 import type { Hooks, PluginInput, PluginOptions } from "@opencode-ai/plugin";

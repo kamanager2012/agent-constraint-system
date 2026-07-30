@@ -1,4 +1,4 @@
-# HACS (Hermes) v1.5 hook configuration — full coverage
+# Hermes hook configuration — full coverage (ACS)
 # Append to ~/.hermes/config.yaml
 
 hooks:

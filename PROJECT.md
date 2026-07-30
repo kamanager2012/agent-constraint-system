@@ -2,7 +2,7 @@
 
 Cross-agent runtime safety layer for autonomous coding agents.
 
-**Current version: v1.5.0** — see [CHANGELOG.md](CHANGELOG.md)
+**Current version: v1.6.1** — see [CHANGELOG.md](CHANGELOG.md)
 
 ## Quick Start
 
