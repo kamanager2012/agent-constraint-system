@@ -17,6 +17,7 @@ from paths import is_forbidden_path
 from violations import add_violation, clear_violations, window_score, should_lock, load_violations, integrity_store, integrity_verify
 from audit import AuditLogger
 from asset_ledger import AssetLedger
+from capability_ledger import CapabilityLedger
 from safe_mode import SafeMode
 
 CLAUDE_DIR = Path.home() / ".claude"
@@ -28,6 +29,7 @@ AUDIT_LOG = RUNTIME_DIR / "tool-audit.jsonl"
 
 audit = AuditLogger(AUDIT_LOG)
 ledger = AssetLedger(str(RUNTIME_DIR / "asset_ledger.json"))
+cap_ledger = CapabilityLedger(str(RUNTIME_DIR / "capability_ledger.json"))
 safe_mode = SafeMode(str(RUNTIME_DIR / "safe_mode.json"))
 
 
@@ -46,7 +48,7 @@ def handle_bash(data):
         return
     if len(tokens) >= 3 and tokens[-3] == "reset" and "--force" in tokens and "--confirm" in tokens:
         return
-    result = check_bash_with_context(cmd, asset_ledger=ledger, error_count=safe_mode.error_count())
+    result = check_bash_with_context(cmd, asset_ledger=ledger, error_count=safe_mode.error_count(), capability_ledger=cap_ledger)
     if result["decision"] == "BLOCK":
         audit.log("PreToolUse", "Bash", data.get("session_id", ""), "deny", result["reason"])
         ws, locked, _ = add_violation(VIOLATIONS_FILE, LOCK_FILE, f"dangerous_command:{cmd[:200]}", 100)
@@ -66,6 +68,15 @@ def handle_write(data):
     if root:
         ws, locked, _ = add_violation(VIOLATIONS_FILE, LOCK_FILE, f"forbidden:{fp}", 100)
         _deny(f"Write to {fp} (under {root}) forbidden")
+    # Capability gate: overwriting/clearing a tracked credential that has no
+    # verified replacement would break runtime capability.
+    if cap_ledger.is_tracked(fp):
+        decision = cap_ledger.removal_decision(fp)
+        if "BLOCK" in decision:
+            add_violation(VIOLATIONS_FILE, LOCK_FILE, f"capability:{fp}", 100)
+            _deny(f"capability_ledger: {decision}")
+        if "CONFIRM" in decision:
+            _deny(f"[CONFIRM] capability_ledger: {decision}")
 
 
 def cli():
@@ -85,7 +96,22 @@ def cli():
         v = load_violations(VIOLATIONS_FILE)
         ws, locked = window_score(v), should_lock(v)
         ok, msg = integrity_verify(INTEGRITY_FILE)
-        print(f"[ACS Claude] ws={ws} locked={locked} integrity={msg} assets={len(ledger._assets)} safe={safe_mode.is_active()}")
+        print(f"[ACS Claude] ws={ws} locked={locked} integrity={msg} assets={len(ledger._assets)} caps={len(cap_ledger._caps)} safe={safe_mode.is_active()}")
+        sys.exit(0)
+    elif cmd == "capability-track" and len(sys.argv) >= 4:
+        # capability-track <path> <secret_id> [dependent...]
+        cap_ledger.track(sys.argv[2], sys.argv[3], dependents=sys.argv[4:])
+        print(f"[ACS Claude] tracked credential {sys.argv[2]} ({sys.argv[3]})")
+        sys.exit(0)
+    elif cmd == "capability-verify" and len(sys.argv) >= 3:
+        # capability-verify <path>  (marks replacement verified — CONFIRM gate)
+        cap_ledger.mark_replacement_verified(sys.argv[2])
+        print(f"[ACS Claude] replacement verified for {sys.argv[2]} (CONFIRM until workflow passes)")
+        sys.exit(0)
+    elif cmd == "capability-removable" and len(sys.argv) >= 3:
+        # capability-removable <path>  (marks old credential safe to remove)
+        cap_ledger.mark_removable(sys.argv[2])
+        print(f"[ACS Claude] {sys.argv[2]} marked removable")
         sys.exit(0)
 
 
