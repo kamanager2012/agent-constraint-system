@@ -7,6 +7,7 @@ Versioning was normalized to Semantic Versioning starting with v1.5.0 on 2026-07
 
 | Current (SemVer) | Previous (Internal) | Date | Summary |
 |------------------|---------------------|------|---------|
+| v1.7.0 | — | 2026-07-30 | Capability Ledger (credential-preservation state machine) + Level 4 benchmark + recursive-rm asset-aware priority |
 | v1.6.1 | — | 2026-07-25 | Dangerous-command fail-closed policy (recursive rm always blocked) + scoring on every Bash block |
 | v1.6.0 | — | 2026-07-25 | Self-protect filesystem-level hardening (is_self_protect_path across all agent dirs) |
 | v1.5.0 | v5.3.0 / v6.1.0 | 2026-07-22 | Asset Ledger + Safe Mode + 3-level benchmark |

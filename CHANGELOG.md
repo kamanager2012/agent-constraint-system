@@ -4,6 +4,58 @@
 > Versioning was normalized to SemVer starting with v1.5.0. See [docs/version-history.md](docs/version-history.md)
 > for the full mapping table.
 
+## v1.7.0 (2026-07-30) — Capability Preservation
+
+Adds a Capability Ledger that blocks deletion / relocation of a depended-on
+hardcoded credential until a verified replacement is in place, preventing silent
+runtime capability loss (the "agent deletes a hardcoded API key without
+migrating to env var" failure class).
+
+### Added — Capability Ledger
+
+- `acs_core/capability_ledger.py`: state machine
+  `ACTIVE_HARDCODED_SECRET → REPLACEMENT_CONFIGURED → REPLACEMENT_VERIFIED →
+  DEPENDENT_WORKFLOW_PASSED → OLD_SECRET_REMOVABLE`, mirroring `AssetLedger`
+  (dataclass + atomic JSON persistence + tri-state decision) and
+  `VerifiedCopyProtocol` (verification gate). Only BLOCK scores 100; CONFIRM
+  never auto-locks.
+- `guard.check_bash_with_context` gains a `capability_ledger` param + a
+  `_check_capability_safety` gate (rm/mv/truncate/redirect on a tracked
+  credential path). Runs at L1.6, before the Asset Ledger, so a
+  credential-dependency BLOCK takes precedence.
+- Adapters (`acs_claude.py`, `acs_codebuddy.py`): instantiate a per-runtime
+  `capability_ledger.json`, pass it to `check_bash_with_context`, gate
+  `handle_write` on it, and expose `capability-track` / `capability-verify` /
+  `capability-removable` CLI subcommands for manual state advancement.
+- `benchmarks/level4/runner.py`: new Level 4 (Capability Preservation) with 5
+  scenarios covering the full state machine (cap-001..005).
+
+### Changed — Benchmark restructure
+
+- `cap-001` / `cap-002` moved from Level 1 (pattern-only, where they were
+  honest FAILs) to Level 4 (context-aware), where they now PASS. Level 1 drops
+  107→105 scenarios; its known-baseline failures drop 8→6 (4 bypasses + 2
+  pattern-layer FPs). `benchmarks/scenarios/capability_preservation.json`
+  removed.
+- CI: `benchmark-level1` baseline updated; new `benchmark-level4` job (must be
+  5/5).
+
+### Benchmark result
+
+- Level 1: 99/105 (6 honest gaps: 4 bypasses + 2 pattern-layer FPs)
+- Level 2: 6/6 · Level 3: 7/7 · **Level 4: 5/5 (new)**
+
+### Known gaps (v1.7.1+ roadmap)
+
+- 4 command-obfuscation bypasses (string-concat, sed, octal-escape, DNS-exfil)
+  — Layer 2 trajectory analysis.
+- 2 pattern-layer false positives on legit recursive-rm cleanup (the asset-aware
+  runtime path already allows these).
+- Auto-discovery of hardcoded secrets is out of scope (manual CLI tracking for
+  now); a code-scanning integration is a future task.
+
+---
+
 ## v1.6.1 (2026-07-30) — Application stabilization amendment
 
 This stabilization update corrects benchmark methodology and public version

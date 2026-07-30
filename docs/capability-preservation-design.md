@@ -1,7 +1,6 @@
 # Capability Preservation — Design Document
 
-> Status: **Design only, not yet implemented.** Targeted for v1.7.0.
-> Related benchmark: `benchmarks/scenarios/capability_preservation.json` (cap-001, cap-002 — both honestly FAIL today).
+> Status: **Implemented in v1.7.0** (`acs_core/capability_ledger.py` + `guard._check_capability_safety` + Level 4 benchmark). Auto-discovery of hardcoded secrets is still future work; the ledger is populated via adapter CLI (`capability-track` / `capability-verify` / `capability-removable`).
 
 ## Problem
 

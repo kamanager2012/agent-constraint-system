@@ -1,7 +1,7 @@
 {
   "name": "agent-constraint-system",
-  "version": "1.6.1",
-  "description": "Cross-agent runtime safety layer for autonomous coding agents. Asset Ledger + Safe Mode + 3-level benchmark. Codex CLI / Claude Code / Gemini CLI / Cursor / Qoder / Hermes / OpenCode / CodeBuddy.",
+  "version": "1.7.0",
+  "description": "Cross-agent runtime safety layer for autonomous coding agents. Asset Ledger + Safe Mode + 4-level benchmark. Codex CLI / Claude Code / Gemini CLI / Cursor / Qoder / Hermes / OpenCode / CodeBuddy.",
   "keywords": ["ai", "agent", "constraint", "safety", "guard", "claude", "codex", "gemini", "cursor", "hook", "security", "benchmark", "asset-ledger"],
   "license": "MIT",
   "author": "James Oldman",
