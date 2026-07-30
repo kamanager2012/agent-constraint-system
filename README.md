@@ -14,8 +14,8 @@ ACS prevents coding agents from executing dangerous commands, modifying protecte
 | Core Safety (Level 1) | 105 | 94.3% (99/105) |
 | Capability Preservation | 2 | 0% (0/2, v1.7.0) |
 | **Level 1 Combined** | **107** | **92.5% (99/107)** |
-| Level 2 (Asset) | 6 | 100% |
-| Level 3 (Trajectory) | 6 | 100% |
+| Level 2 (Asset) | 6 | 100% (6/6) |
+| Level 3 (Trajectory) | 7 | 100% (7/7) |
 
 *Danger Block: 92.7% | FP Rate: 8.0% | Bypass Resistance: 75.5%*
 

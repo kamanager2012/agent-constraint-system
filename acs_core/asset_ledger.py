@@ -172,9 +172,16 @@ class AssetLedger:
         if entry.delete_authorized and not entry.verified_copy:
             return "CONFIRM: authorized but no verified copy"
 
-        # Critical asset: recovered from history or agent-created, no copy, no backup, not authorized
-        if entry.origin in ("recovered_from_history", "agent_generated") and not entry.verified_copy and not entry.backup_location:
+        # Critical asset: recovered from history (hard to recreate user data),
+        # no copy, no backup, not authorized → BLOCK.
+        if entry.origin == "recovered_from_history" and not entry.verified_copy and not entry.backup_location:
             return "BLOCK: critical_asset_no_copy_no_backup"
+
+        # Agent-generated asset (agent can recreate): CONFIRM, not BLOCK.
+        # Aligns with the asset-aware decision table: only recovered/user-created
+        # critical assets hard-block; agent-generated work needs confirmation.
+        if entry.origin == "agent_generated" and not entry.verified_copy and not entry.backup_location:
+            return "CONFIRM: agent_generated_unverified"
 
         # Has backup: confirm
         if entry.backup_location and not entry.verified_copy:

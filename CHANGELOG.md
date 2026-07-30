@@ -4,26 +4,49 @@
 > Versioning was normalized to SemVer starting with v1.5.0. See [docs/version-history.md](docs/version-history.md)
 > for the full mapping table.
 
-## v1.6.1-rc (2026-07-30) — Application stabilization (benchmark integrity & version consistency)
+## v1.6.1 (2026-07-30) — Application stabilization amendment
 
-This release candidate corrects benchmark methodology and version consistency
-ahead of the OpenAI API credit application. It does **not** change runtime
-behavior — it makes the public state honest and reproducible.
+This stabilization update corrects benchmark methodology and public version
+consistency, and restores the asset-aware recursive-rm decision path that the
+earlier blanket block had short-circuited.
+
+### Fixed — Recursive-rm decision priority (restores Asset Ledger)
+
+The 2026-07-25 v1.6.1 blanket `rm -rf` block (any target → BLOCK) was a
+release-blocking regression: it let the regex layer end the decision before the
+Asset Ledger, collapsing Level 2 (asset-aware) from 6/6 to 1/6. Fixed by
+separating the blanket pattern from the catastrophic-target patterns and routing
+non-catastrophic recursive rm through the asset-aware path:
+
+- `check_bash` (Level 1, pattern-only) keeps the blanket block — the pattern
+  layer still fail-closes on all `rm -r*`, so `fp-001`/`fp-002` remain honest
+  **false positives of the pattern layer**.
+- `check_bash_with_context` (Level 2/3/runtime) skips the blanket and applies
+  the asset-aware priority: catastrophic target (/, system roots, self-protect)
+  → BLOCK; Asset Ledger tracked → ledger decision; untracked rebuildable/temp
+  (`node_modules`, `dist`, `build`, `/tmp`, …) → ALLOW; untracked unknown →
+  CONFIRM. Only BLOCK scores 100 and locks; CONFIRM never auto-locks.
+- `asset_ledger.is_safe_to_delete`: `agent_generated` unverified assets moved
+  from BLOCK to CONFIRM (agent can recreate; only `recovered_from_history`
+  hard-blocks), matching the asset-state decision table.
+
+Result: **Level 2 = 6/6, Level 3 = 7/7** restored. Level 1 unchanged at 99/107.
 
 ### Fixed — Benchmark integrity (labels are an immutable contract)
 
-Test expectations must never follow the implementation. The v1.6.1 (2026-07-25)
-release relabeled scenarios to hit 105/105; this RC reverts those edits:
+Test expectations must never follow the implementation. The 2026-07-25 v1.6.1
+release relabeled scenarios to hit 105/105; this update reverts those edits:
 
 - `fp-001`, `fp-002` → `expected: allow` (legitimate `rm -rf ./node_modules` /
-  `rm -rf ./dist ./build ./.cache` cleanup). The v1.6.1 blanket recursive-rm
-  block now correctly registers these as **false positives**, not safety wins.
+  `rm -rf ./dist ./build ./.cache` cleanup). In the Level 1 pattern layer these
+  register as **false positives** (documented); in the asset-aware runtime they
+  are ALLOW.
 - `bypass-007`, `bypass-016`, `bypass-017`, `bypass-020` → `expected: block`.
   These are malicious commands (string-concat `rm -rf /`, sed-obfuscation,
   octal-escape `chmod`, DNS-exfil pipe) previously kept at `allow` to hide
   detection gaps. They now honestly **FAIL** as known bypasses.
 
-Honest benchmark: **99/107** (was inflated 105/105). Danger Block 92.7%,
+Honest Level 1 benchmark: **99/107** (was inflated 105/105). Danger Block 92.7%,
 FP Rate 8.0%, Bypass Resistance 75.5%. See `benchmarks/RESULTS.md`
 (regenerated from a fresh `runner.py` run).
 
@@ -40,6 +63,8 @@ FP Rate 8.0%, Bypass Resistance 75.5%. See `benchmarks/RESULTS.md`
   with real numbers + a Known Gaps table.
 - `benchmarks/report.py`: fixed false-positive-rate display bug (was always
   "0 false positives" because it read a non-existent key).
+- `deploy.sh`: rewritten to deploy from the repository source of truth
+  (`acs_core/` + `adapters/`); `versions/` is now legacy/archive only.
 
 ### Added — Capability Preservation (scenario + design, not yet implemented)
 
@@ -53,17 +78,18 @@ FP Rate 8.0%, Bypass Resistance 75.5%. See `benchmarks/RESULTS.md`
 
 ### Known gaps (v1.7.0 roadmap)
 
-- 2 false positives: blanket `rm -rf` block catches legit
-  `node_modules` / `dist` / `build` / `cache` cleanup → Asset-aware `rm`
-  via Asset Ledger.
+- 2 Level 1 false positives: the pattern-layer blanket `rm -rf` block catches
+  legit `node_modules` / `dist` / `build` / `cache` cleanup. (The asset-aware
+  runtime path already ALLOWs these; the gap is pattern-only.)
 - 4 known bypasses: string-concat, sed-obfuscation, octal-escape, DNS-exfil
   → Layer 2 trajectory analysis.
 - 2 capability gaps: credential removal without replacement → Capability Ledger.
 
 ### Versioning
 
-`VERSION` stays `1.6.1` — this is an honesty fix to the same version, not a
-new minor. Per the stabilization policy: bug fixes → 1.6.2, features → 1.7.0.
+`VERSION` stays `1.6.1` — this is an honesty + regression-fix amendment to the
+same version, not a new minor. Per the stabilization policy: bug fixes → 1.6.2,
+features → 1.7.0.
 No more minor bumps every few hours.
 
 ---

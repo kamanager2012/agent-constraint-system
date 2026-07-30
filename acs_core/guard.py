@@ -13,14 +13,12 @@ _AGENT = r"(?:claude|codebuddy|codex|cursor|gemini|grok|hermes|opencode|qoder-cn
 _AGENT_SUB = r"(?:hooks|runtime|governance|agent-hooks|cacs_runtime|gacs_runtime|grok_acs_runtime|hacs_runtime|qacs_runtime)"
 
 DANGEROUS_BASH: List[Tuple[str, str]] = [
-    # DELETE
-    # RECURSIVE DELETE — fail-closed core policy: any recursive remove
-    # (`rm -r` / `rm -rf` / `rm -fr` / `rm -Rf`, bare or with any target) is
-    # ALWAYS blocked, regardless of directory. No review (CONFIRM), no
-    # per-directory exception. This is the dangerous-command policy: recursive
-    # delete is never permitted. (Score penalty is applied by the adapters'
-    # handle_bash on the resulting BLOCK.)
-    (r"\brm\b\s+-[a-zA-Z]*[rR][a-zA-Z]*\b", "rm recursive (rm -rf) — always blocked"),
+    # DELETE — catastrophic recursive-rm targets (always BLOCK, including in
+    # context-aware mode). The BLANKET recursive-rm block (any target) is kept
+    # separately as _BLANKET_RECURSIVE_RM: check_bash (Level 1, pattern-only)
+    # applies it unconditionally, but check_bash_with_context skips it so
+    # non-catastrophic recursive rm routes to the Asset Ledger instead of being
+    # short-circuited by the regex layer. See check_bash_with_context.
     (r"(?:^|[|;&]|\s*&&\s*|\s*\|\|\s*)\s*rm\s+-[a-zA-Z]*[rf]\s+/(?:\s|$)",       "rm -rf /"),
     (r"(?:^|[|;&]|\s*&&\s*|\s*\|\|\s*)\s*rm\s+-[a-zA-Z]*[rf]\s+/\*",             "rm -rf /*"),
     (r"(?:^|[|;&]|\s*&&\s*|\s*\|\|\s*)\s*rm\s+-[a-zA-Z]*[rf]\s+\*",              "rm -rf *"),
@@ -111,6 +109,27 @@ DANGEROUS_BASH: List[Tuple[str, str]] = [
 
 COMPILED_DANGEROUS = [(re.compile(p, re.IGNORECASE), desc) for p, desc in DANGEROUS_BASH]
 
+# Blanket recursive-rm block (any target). Applied by check_bash (Level 1,
+# pattern-only) so the pattern layer fail-closes on all `rm -r*`. SKIPPED by
+# check_bash_with_context (which passes _skip_blanket_rm=True for recursive rm)
+# so non-catastrophic recursive rm reaches the Asset Ledger. Catastrophic
+# targets above (/ , ~, system, repo root, self-protect) still BLOCK first via
+# the dedicated patterns + the paths-based check in check_bash_with_context.
+_BLANKET_RECURSIVE_RM = re.compile(r"\brm\b\s+-[a-zA-Z]*[rR][a-zA-Z]*\b", re.IGNORECASE)
+_BLANKET_RECURSIVE_RM_DESC = "rm recursive (rm -rf) — always blocked"
+
+# Recursive-rm detector + first-target extractor for the asset-aware path.
+_RECURSIVE_RM_RE = re.compile(r"\brm\b\s+-[a-zA-Z]*[rR][a-zA-Z]*\b", re.IGNORECASE)
+_RM_TARGET_RE = re.compile(r"\brm\b\s+-[a-zA-Z]*[rR][a-zA-Z]*\b\s+(\S+)", re.IGNORECASE)
+
+# Recognized rebuildable / temporary assets: recursive rm on these is ALLOWed
+# (asset-aware path). Mirrors the project's asset-state decision table.
+_REBUILDABLE_RE = re.compile(
+    r"(^|/)(node_modules|dist|build|target|out|\.cache|__pycache__|\.next|\.turbo|coverage)(/|$)"
+    r"|^/tmp/|^/var/tmp/|/cache/|/temp/|/tmp$",
+    re.IGNORECASE,
+)
+
 # -- Git destructive patterns --
 
 GIT_DESTRUCTIVE: List[Tuple[str, str]] = [
@@ -196,10 +215,14 @@ _BYPASS_PATTERNS = [
 ]
 
 
-def check_bash(command: str) -> str | None:
+def check_bash(command: str, _skip_blanket_rm: bool = False) -> str | None:
     """Check a Bash command against all dangerous patterns.
 
     Returns the blocking reason if dangerous, None if safe.
+
+    ``_skip_blanket_rm`` is used by check_bash_with_context to route
+    non-catastrophic recursive rm to the Asset Ledger instead of the blanket
+    block. Level 1 (pattern-only) never sets it, so the blanket stays.
     """
     # First pass: check for bypass patterns (before cleaning — encoded content in quotes)
     for pattern, desc in _BYPASS_PATTERNS:
@@ -221,6 +244,11 @@ def check_bash(command: str) -> str | None:
 
         # Clean and check each sub-command independently
         cleaned = clean_command(stripped)
+
+        # Blanket recursive-rm block (Level 1 pattern layer). Skipped in
+        # context-aware mode so the Asset Ledger can judge non-catastrophic rm.
+        if not _skip_blanket_rm and _BLANKET_RECURSIVE_RM.search(cleaned):
+            return f"Dangerous command blocked: {_BLANKET_RECURSIVE_RM_DESC}"
 
         for pattern, desc in COMPILED_DANGEROUS:
             if pattern.search(cleaned):
@@ -247,6 +275,13 @@ def check_bash_with_context(
 ) -> dict:
     """Context-aware Bash safety check with tri-state output.
 
+    Recursive rm is NOT short-circuited by the blanket pattern block. Instead:
+      1. Catastrophic targets (/, system roots, self-protect) → BLOCK
+      2. Asset Ledger tracked → ledger decision (ALLOW/CONFIRM/BLOCK)
+      3. Untracked rebuildable/temp (node_modules, dist, /tmp, ...) → ALLOW
+      4. Untracked unknown target → CONFIRM
+    Only BLOCK scores 100 and locks; CONFIRM never auto-locks.
+
     Args:
         command: The bash command to check
         asset_ledger: Optional AssetLedger for asset-aware decisions
@@ -255,23 +290,55 @@ def check_bash_with_context(
     Returns:
         {"decision": "ALLOW"|"CONFIRM"|"BLOCK", "reason": str}
     """
-    # Level 1: Pattern matching
-    pattern_result = check_bash(command)
+    from paths import is_forbidden_path, is_self_protect_path
+
+    is_recursive_rm = _RECURSIVE_RM_RE.search(command) is not None
+
+    # L1: pattern matching. For recursive rm, skip the blanket block so
+    # non-catastrophic targets reach the Asset Ledger; catastrophic-target
+    # patterns (rm -rf /, ~, project/repo) and self-protect still BLOCK.
+    pattern_result = check_bash(command, _skip_blanket_rm=is_recursive_rm)
     if pattern_result:
         return {"decision": "BLOCK", "reason": pattern_result}
 
-    # Level 2: Asset-aware check for destructive operations
+    # L1.5: paths-based catastrophic check for recursive rm targets that the
+    # regex patterns above don't cover (e.g. rm -rf /etc, /usr, /boot).
+    if is_recursive_rm:
+        m = _RM_TARGET_RE.search(command)
+        if m:
+            target = m.group(1)
+            root = is_forbidden_path(target)
+            sp = is_self_protect_path(target)
+            if root or sp:
+                why = f"forbidden root {root}" if root else "self-protect path"
+                return {"decision": "BLOCK",
+                        "reason": f"recursive rm on {why}: {target}"}
+
+    # L2: asset-aware check for tracked assets (rm + mv).
     if asset_ledger is not None:
         asset_result = _check_asset_safety(command, asset_ledger)
         if asset_result:
             return asset_result
 
-    # Level 3: Post-error safe mode (only upgrades ALLOW -> CONFIRM, never downgrades BLOCK)
+    # L2.5: recursive rm on an UNTRACKED target — asset-aware priority.
+    # Ledger didn't decide (untracked), so classify by target:
+    #   rebuildable/temp → ALLOW ; unknown → CONFIRM.
+    if is_recursive_rm:
+        m = _RM_TARGET_RE.search(command)
+        if m:
+            target = m.group(1)
+            if _REBUILDABLE_RE.search(target):
+                return {"decision": "ALLOW",
+                        "reason": f"recursive rm on rebuildable/temp asset: {target}"}
+            return {"decision": "CONFIRM",
+                    "reason": f"recursive rm on untracked target: {target} — confirmation required"}
+
+    # L3: post-error safe mode (only upgrades ALLOW -> CONFIRM, never downgrades BLOCK)
     # If we reached here, Level 1 and Level 2 both passed (would be ALLOW).
     if error_count >= 2 and _is_destructive(command):
         return {
             "decision": "CONFIRM",
-            "reason": "safe_mode: agent has 2+ recent errors".format(error_count),
+            "reason": f"safe_mode: agent has {error_count}+ recent errors",
         }
 
     return {"decision": "ALLOW", "reason": "safe"}
@@ -283,7 +350,12 @@ def _is_destructive(command: str) -> bool:
 
 
 def _check_asset_safety(command: str, ledger) -> Optional[dict]:
-    """Check command against the asset ledger for context-aware safety."""
+    """Check command against the asset ledger for context-aware safety.
+
+    Returns None only for UNTRACKED targets (so check_bash_with_context's L2.5
+    can classify them). Tracked assets always return a decision dict — including
+    ALLOW, so a tracked+verified asset is not re-classified by L2.5.
+    """
     import re as _re
 
     rm_match = _re.search(r"\brm\s+(?:-[a-zA-Z]*[rf][a-zA-Z]*\s+)?(\S+)", command)
@@ -296,7 +368,7 @@ def _check_asset_safety(command: str, ledger) -> Optional[dict]:
         return None
 
     if not ledger.is_tracked(target_path):
-        return None
+        return None  # untracked → let L2.5 classify
 
     decision = ledger.is_safe_to_delete(target_path)
     if "BLOCK" in decision:
@@ -308,4 +380,5 @@ def _check_asset_safety(command: str, ledger) -> Optional[dict]:
     elif "CONFIRM" in decision:
         return {"decision": "CONFIRM", "reason": "asset_ledger: {}".format(decision)}
 
-    return None
+    # tracked + safe (authorized/verified) → ALLOW (do not fall through to L2.5)
+    return {"decision": "ALLOW", "reason": "asset_ledger: {}".format(decision)}
