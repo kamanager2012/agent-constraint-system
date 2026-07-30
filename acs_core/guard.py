@@ -272,11 +272,13 @@ def check_bash_with_context(
     command: str,
     asset_ledger=None,
     error_count: int = 0,
+    capability_ledger=None,
 ) -> dict:
     """Context-aware Bash safety check with tri-state output.
 
     Recursive rm is NOT short-circuited by the blanket pattern block. Instead:
       1. Catastrophic targets (/, system roots, self-protect) → BLOCK
+      1.5. Capability Ledger tracked credential → BLOCK/CONFIRM/ALLOW per state
       2. Asset Ledger tracked → ledger decision (ALLOW/CONFIRM/BLOCK)
       3. Untracked rebuildable/temp (node_modules, dist, /tmp, ...) → ALLOW
       4. Untracked unknown target → CONFIRM
@@ -286,6 +288,9 @@ def check_bash_with_context(
         command: The bash command to check
         asset_ledger: Optional AssetLedger for asset-aware decisions
         error_count: Agent's recent error count (for safe mode)
+        capability_ledger: Optional CapabilityLedger for credential-preservation
+            gating (blocks removal of a depended-on credential until a verified
+            replacement is in place)
 
     Returns:
         {"decision": "ALLOW"|"CONFIRM"|"BLOCK", "reason": str}
@@ -313,6 +318,16 @@ def check_bash_with_context(
                 why = f"forbidden root {root}" if root else "self-protect path"
                 return {"decision": "BLOCK",
                         "reason": f"recursive rm on {why}: {target}"}
+
+    # L1.6: Capability Ledger — gate removal/relocation of a depended-on
+    # credential on a verified replacement. Runs before the Asset Ledger so a
+    # credential-dependency BLOCK (runtime would lose capability) takes
+    # precedence. Tracked credentials return definitively (incl. ALLOW), so a
+    # verified-removable credential is not re-classified by L2/L2.5.
+    if capability_ledger is not None:
+        cap_result = _check_capability_safety(command, capability_ledger)
+        if cap_result:
+            return cap_result
 
     # L2: asset-aware check for tracked assets (rm + mv).
     if asset_ledger is not None:
@@ -382,3 +397,42 @@ def _check_asset_safety(command: str, ledger) -> Optional[dict]:
 
     # tracked + safe (authorized/verified) → ALLOW (do not fall through to L2.5)
     return {"decision": "ALLOW", "reason": "asset_ledger: {}".format(decision)}
+
+
+def _check_capability_safety(command: str, capability_ledger) -> Optional[dict]:
+    """Gate removal/relocation of a depended-on credential on a verified
+    replacement (Capability Ledger). Returns None if no tracked credential is
+    targeted; otherwise returns the ledger's decision definitively (incl.
+    ALLOW, so a verified-removable credential is not re-classified by L2/L2.5).
+    """
+    import re as _re
+
+    # rm: target is the credential being deleted (with or without -r flag).
+    rm_match = _re.search(r"\brm\b\s+(?:-[a-zA-Z]*[rf][a-zA-Z]*\s+)?(\S+)", command)
+    # mv: SOURCE is the credential being relocated.
+    mv_match = _re.search(r"\bmv\s+(\S+)\s+\S+", command)
+    # truncate / clear / redirect-to-empty: target being cleared.
+    trunc_match = _re.search(
+        r"(?:\btruncate\b\s+-s\s+0\s+|:\s*>\s*|\bcp\s+/dev/null\s+|>>?\s*)(\S+)",
+        command,
+    )
+
+    targets = []
+    if rm_match:
+        targets.append(rm_match.group(1))
+    if mv_match:
+        targets.append(mv_match.group(1))
+    if trunc_match:
+        targets.append(trunc_match.group(1))
+
+    for target in targets:
+        if capability_ledger.is_tracked(target):
+            decision = capability_ledger.removal_decision(target)
+            if "BLOCK" in decision:
+                return {"decision": "BLOCK", "reason": f"capability_ledger: {decision}"}
+            if "CONFIRM" in decision:
+                return {"decision": "CONFIRM", "reason": f"capability_ledger: {decision}"}
+            # tracked + removable → ALLOW (definitive; do not fall through)
+            return {"decision": "ALLOW", "reason": f"capability_ledger: {decision}"}
+
+    return None  # no tracked credential targeted
