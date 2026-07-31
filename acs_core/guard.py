@@ -19,43 +19,53 @@ DANGEROUS_BASH: List[Tuple[str, str]] = [
     # applies it unconditionally, but check_bash_with_context skips it so
     # non-catastrophic recursive rm routes to the Asset Ledger instead of being
     # short-circuited by the regex layer. See check_bash_with_context.
-    (r"(?:^|[|;&]|\s*&&\s*|\s*\|\|\s*)\s*rm\s+-[a-zA-Z]*[rf]\s+/(?:\s|$)",       "rm -rf /"),
-    (r"(?:^|[|;&]|\s*&&\s*|\s*\|\|\s*)\s*rm\s+-[a-zA-Z]*[rf]\s+/\*",             "rm -rf /*"),
-    (r"(?:^|[|;&]|\s*&&\s*|\s*\|\|\s*)\s*rm\s+-[a-zA-Z]*[rf]\s+\*",              "rm -rf *"),
-    (r"(?:^|[|;&]|\s*&&\s*|\s*\|\|\s*)\s*rm\s+-[a-zA-Z]*[rf]\s+~",                "rm -rf ~"),
-    (r"(?:^|[|;&]|\s*&&\s*|\s*\|\|\s*)\s*rm\s+-[a-zA-Z]*[rf]\s+\S*(?:PROJ|REPO|project|repo)\b", "rm -rf project/repo"),
+    (r"\b(?:^|[|;&]|\s*&&\s*|\s*\|\|\s*)\s*rm\s+-[a-zA-Z]*[rf]\s+/(?:\s|$)",       "rm -rf /"),
+    (r"\b(?:^|[|;&]|\s*&&\s*|\s*\|\|\s*)\s*rm\s+-[a-zA-Z]*[rf]\s+/\*",             "rm -rf /*"),
+    (r"\b(?:^|[|;&]|\s*&&\s*|\s*\|\|\s*)\s*rm\s+-[a-zA-Z]*[rf]\s+\*",              "rm -rf *"),
+    (r"\b(?:^|[|;&]|\s*&&\s*|\s*\|\|\s*)\s*rm\s+-[a-zA-Z]*[rf]\s+~",                "rm -rf ~"),
+    (r"\b(?:^|[|;&]|\s*&&\s*|\s*\|\|\s*)\s*rm\s+-[a-zA-Z]*[rf]\s+\S*(?:PROJ|REPO|project|repo)\b", "rm -rf project/repo"),
     (r"\btruncate\s+-s\s+0",                                   "truncate to zero"),
     # FIND with delete/exec (bypasses rm -rf pattern checks)
-    (r"\bfind\b.*\s+-exec\s+(?:rm|sh|bash|python)\b",            "find -exec (dangerous)"),
-    (r"\bfind\b.*\s+-delete\b",                                   "find -delete (destroys files)"),
+    (r"\bfind\b.{0,2048}\s+-exec\s+(?:rm|sh|bash|python)\b",     "find -exec (dangerous)"),
+    (r"\bfind\b.{0,2048}\s+-delete\b",                            "find -delete (destroys files)"),
     # xargs with dangerous commands
     (r"\bxargs\b.*\brm\s+-[rf]",                                "xargs rm (via pipeline)"),
 
     # SYSTEM
-    (r"(?:^|[|;&]|\s*&&\s*|\s*\|\|\s*|sudo\s+|exec\s+|env\s+|nice\s+|command\s+)*\s*kill\s+-9\b",  "kill -9 (force kill)"),
+    (r"\b(?:^|[|;&]|\s*&&\s*|\s*\|\|\s*|sudo\s+|exec\s+|env\s+|nice\s+|command\s+)*\s*kill\s+-9\b",  "kill -9 (force kill)"),
     (r"\bmkfs(?:\.\w+|\s+-t\s+\w+)",                            "mkfs (disk format)"),
-    (r"(?:^|[|;&]|\s*&&\s*|\s*\|\|\s*|sudo\s+|exec\s+|env\s+|nice\s+|command\s+)*\s*dd\s+if=/dev/","dd writing to block device"),
+    (r"\b(?:^|[|;&]|\s*&&\s*|\s*\|\|\s*|sudo\s+|exec\s+|env\s+|nice\s+|command\s+)*\s*dd\s+if=/dev/","dd writing to block device"),
     (r"\breboot\b",                                             "reboot"),
     (r"\bshutdown\b",                                           "shutdown"),
     (r":\(\s*\)\s*\{",                                         "fork bomb (colon style)"),
-    (r"\w+\(\s*\)\s*\{[^}]*\|[^}]*&\s*[^}]*\}",            "fork bomb (named func style)"),
+    # \w{1,64}: the greedy \w+ + backtracking-at-every-start-position scan is
+    # O(n²) on long word-run input with no '(' (measured 1.4s on 40KB).
+    # {0,256} on adjacent [^}]* keeps the separator ambiguity bounded —
+    # realistic fork bombs (name + payload) are all < 60 chars.
+    # ^\s* anchors at line start but allows leading whitespace — a bare
+    # `bomb() {...}` with a leading space is valid bash and must not bypass.
+    (r"(?:^\s*|[\n;&|]\s*)\w{1,64}\(\s*\)\s*\{[^}]{0,256}\|[^}]{0,256}&\s*[^}]{0,256}\}", "fork bomb (named func style)"),
 
     # EXEC -- inline interpreter
     (r"\b(?:node|python3?|perl|ruby|php|lua)\s+-[ce]\b",      "inline interpreter execution"),
     (r"\b(?:python3?|node|perl|ruby|bash)\s+<<",               "heredoc interpreter"),
     (r"\beval\s+\$",                                            "eval with variable/substitution"),
 
-    # BYPASS -- encoding/decoding pipe chains
-    (r"\bbase64\s+(?:-d|--decode).*\|.*(?:ba)?sh\b",         "base64 decode pipe to shell"),
-    (r"\bxxd\s+-r\s+-p.*\|.*(?:ba)?sh\b",                    "xxd decode pipe to shell"),
-    (r"\bopenssl\s+(?:base64|enc)\s+-d.*\|.*(?:ba)?sh\b",   "openssl decode pipe to shell"),
-    (r"\b(?:nc|ncat)\s+.*\|\s*(?:ba)?sh\b",                   "netcat pipe to shell"),
+    # BYPASS -- encoding/decoding pipe chains. Adjacent bounded stars would
+    # multiply worst-case work (bound1×bound2): the FIRST star keeps {0,2048}
+    # (long URLs/paths before the pipe are legit) while the LAST star drops to
+    # {0,256} (the "| sh" tail is always short), capping the product ~500K.
+    (r"\bbase64\s+(?:-d|--decode)(?:(?!\|).){0,2048}\|(?:(?!\b(?:ba)?sh\b).){0,256}(?:ba)?sh\b", "base64 decode pipe to shell"),
+    (r"\bxxd\s+-r\s+-p(?:(?!\|).){0,2048}\|(?:(?!\b(?:ba)?sh\b).){0,256}(?:ba)?sh\b",        "xxd decode pipe to shell"),
+    (r"\bopenssl\s+(?:base64|enc)\s+-d(?:(?!\|).){0,2048}\|(?:(?!\b(?:ba)?sh\b).){0,256}(?:ba)?sh\b", "openssl decode pipe to shell"),
+    (r"\b(?:nc|ncat)\s+.{0,2048}\|\s*(?:ba)?sh\b",            "netcat pipe to shell"),
     # Alternative decoders (Python, Perl, Ruby)
     (r"\b(?:python3?|perl|ruby)\s+-[ce]\s+(?:import\s+base64|MIME::Base64|Base64)", "scripted base64 decode"),
-    (r"\bpython3?\s+-c\s+.*base64.*\.decode\(",               "python base64 decode"),
-    # Nested decode inside command substitution
-    (r"sh\s+-c\s+.*\$\(.*(?:base64|xxd|openssl).*\|\s*(?:ba)?sh", "nested decode in subshell"),
-    (r"\bsh\s+-c\s+.*\$\(.*base64.*-d.*\)",                   "sh -c with base64 decode subshell"),
+    (r"\bpython3?\s+-c\s+(?:(?!base64).){0,2048}base64(?:(?!\.decode\().){0,256}\.decode\(",  "python base64 decode"),
+    # Nested decode inside command substitution (4 bounded stars: 256³ caps
+    # the product ~16M worst; realistic gaps between tokens are < 30 chars)
+    (r"sh\s+-c\s+(?:(?!\$\().){0,256}\$\((?:(?!\b(?:base64|xxd|openssl)\b).){0,256}\b(?:base64|xxd|openssl)\b(?:(?!\|\s*(?:ba)?sh\b).){0,256}\|\s*(?:ba)?sh", "nested decode in subshell"),
+    (r"\bsh\s+-c\s+(?:(?!\$\().){0,256}\$\((?:(?!base64).){0,256}base64(?:(?!-d\b).){0,256}-d(?:(?!\)).){0,256}\)", "sh -c with base64 decode subshell"),
     # Git with variable args (potential indirection)
     (r"\bgit\s+\$\w+\s+\$\w+",                                "git with variable arguments"),
     # Alias definition + execution in same command
@@ -84,8 +94,8 @@ DANGEROUS_BASH: List[Tuple[str, str]] = [
     (r"\bcat\s+/etc/(?:shadow|passwd)\b",                      "read /etc sensitive"),
 
     # NETWORK
-    (r"\b(?:wget|curl)\b.*\|\s*(?:sh|bash)\b",                "download pipe shell"),
-    (r"\bcurl.*\|.*(?:ba)?sh",                                  "curl-pipe-shell"),
+    (r"\b(?:wget|curl)\b.{0,2048}\|\s*(?:sh|bash)\b",         "download pipe shell"),
+    (r"\bcurl(?:(?!\|).){0,2048}\|(?:(?!\b(?:ba)?sh\b).){0,256}(?:ba)?sh",                      "curl-pipe-shell"),
 
     # ── ACS SELF-PROTECT ── covers ALL 9 supported agent runtime/hooks dirs ──
     # Agent base dirs + protected subdirs (kept here so every pattern below
@@ -103,7 +113,7 @@ DANGEROUS_BASH: List[Tuple[str, str]] = [
     # symlink injection into agent runtime/hooks
     (r"\bln\s+-s[f]?\s+.*?\.?" + _AGENT + r"/" + _AGENT_SUB, "ACS tamper: symlink into agent dir"),
     # Absolute-path rm bypass for destructive commands
-    (r"(?:^|[|;&]|\s*&&\s*|\s*\|\|\s*|sudo\s+|exec\s+|env\s+|nice\s+)\s*(?:/usr)?/bin/rm\s+-[a-zA-Z]*[rf]\s+/",
+    (r"\b(?:^|[|;&]|\s*&&\s*|\s*\|\|\s*|sudo\s+|exec\s+|env\s+|nice\s+)\s*(?:/usr)?/bin/rm\s+-[a-zA-Z]*[rf]\s+/",
      "rm via absolute path"),
 ]
 
@@ -207,7 +217,11 @@ def _strip_prefix(cmd: str) -> str:
 # alias-definition-then-exec contain ; & | *inside* them, which the
 # sub-command splitter would otherwise shred and let through.
 _WHOLE_CMD_PATTERNS = [
-    (re.compile(r"\w+\(\s*\)\s*\{[^}]*\|[^}]*&\s*[^}]*\}", re.I),
+    # \w{1,64} + {0,256} bounds keep the fork-bomb search linear on
+    # adversarial input (see the identical pattern in DANGEROUS_BASH).
+    # ^\s* anchor allows leading whitespace (valid bash) without the
+    # unbounded \w+ scan that caused the O(n²) blowup.
+    (re.compile(r"(?:^\s*|[\n;&|]\s*)\w{1,64}\(\s*\)\s*\{[^}]{0,256}\|[^}]{0,256}&\s*[^}]{0,256}\}", re.I),
      "fork bomb (named func style)"),
     (re.compile(r":\(\s*\)\s*\{", re.I),
      "fork bomb (colon style)"),
@@ -217,17 +231,17 @@ _WHOLE_CMD_PATTERNS = [
 
 # Compiled once at import time (was recompiled on every check_bash call)
 _BYPASS_PATTERNS = [
-    (re.compile(r"\bbase64\s+(?:-d|--decode).*\|.*(?:ba)?sh\b", re.I),
+    (re.compile(r"\bbase64\s+(?:-d|--decode)(?:(?!\|).){0,2048}\|(?:(?!\b(?:ba)?sh\b).){0,256}(?:ba)?sh\b", re.I),
      "base64 decode pipe to shell"),
-    (re.compile(r"\bxxd\s+-r\s+-p.*\|.*(?:ba)?sh\b", re.I),
+    (re.compile(r"\bxxd\s+-r\s+-p(?:(?!\|).){0,2048}\|(?:(?!\b(?:ba)?sh\b).){0,256}(?:ba)?sh\b", re.I),
      "xxd decode pipe to shell"),
-    (re.compile(r"\bopenssl\s+(?:base64|enc)\s+-d.*\|.*(?:ba)?sh\b", re.I),
+    (re.compile(r"\bopenssl\s+(?:base64|enc)\s+-d(?:(?!\|).){0,2048}\|(?:(?!\b(?:ba)?sh\b).){0,256}(?:ba)?sh\b", re.I),
      "openssl decode pipe to shell"),
     # sh -c with encoded content in subshell (before quote stripping)
-    (re.compile(r"\bsh\s+-c\s+.*\$\(.*(?:base64|xxd|openssl).*(?:-d|--decode).*\)", re.I),
+    (re.compile(r"\bsh\s+-c\s+(?:(?!\$\().){0,256}\$\((?:(?!\b(?:base64|xxd|openssl)\b).){0,256}\b(?:base64|xxd|openssl)\b(?:(?!\s*(?:-d|--decode)\b).){0,256}\s*(?:-d|--decode)(?:(?!\)).){0,256}\)", re.I),
      "sh -c with encoded subshell"),
     # Alternative decoders: python/perl with base64 (before quote stripping)
-    (re.compile(r"\b(?:python3?|perl|ruby)\s+-[ce].*(?:base64|MIME::Base64|\.decode\()", re.I),
+    (re.compile(r"\b(?:python3?|perl|ruby)\s+-[ce](?:(?!\b(?:base64|MIME::Base64|\.decode\()).){0,2048}\b(?:base64|MIME::Base64|\.decode\()", re.I),
      "scripted base64 decode"),
     # Variable indirection: $VAR containing dangerous paths
     (re.compile(r"\b(?:export\s+)?\w+\s*=\s*(?:rm|dd|mkfs|kill|chmod)\b", re.I),
@@ -275,12 +289,6 @@ def check_bash(command: str, _skip_blanket_rm: bool = False) -> str | None:
 
         for pattern, desc in COMPILED_DANGEROUS:
             if pattern.search(cleaned):
-                return f"Dangerous command blocked: {desc}"
-
-        # Also check original (un-stripped) for patterns that look for prefix contexts
-        cleaned_orig = clean_command(sub_cmd)
-        for pattern, desc in COMPILED_DANGEROUS:
-            if pattern.search(cleaned_orig) and pattern.search(cleaned) is None:
                 return f"Dangerous command blocked: {desc}"
 
         # Git patterns run on cleaned command

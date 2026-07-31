@@ -225,8 +225,10 @@ class AssetTracker:
         # If source was tracked, the destination inherits its origin
         src_entry = self.ledger.get(source)
         if src_entry:
-            # Track destination with source's origin
-            entry = self.ledger.track(dest, origin=src_entry.origin)
+            # Mutate in place then save ONCE (track() would save, then the
+            # field updates would trigger a second _save()).
+            entry = self.ledger._get_or_create(str(Path(dest).resolve()))
+            entry.origin = src_entry.origin
             entry.moved_from = str(Path(source).resolve())
             entry.status = "MOVED"
             entry.verified_copy = False

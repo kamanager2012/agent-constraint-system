@@ -1,5 +1,5 @@
 # acs_core/safe_mode.py -- Post-Error Safe Mode (with persistence)
-import json, os, time
+import json, os, tempfile, time
 from typing import Dict
 
 
@@ -56,13 +56,26 @@ class SafeMode:
         }
 
     def _save(self) -> None:
-        if self._storage_path:
-            os.makedirs(os.path.dirname(self._storage_path), exist_ok=True)
-            # Atomic write: tmp + rename prevents corruption from concurrent writers
-            tmp_path = self._storage_path + ".tmp"
-            with open(tmp_path, 'w') as f:
+        if not self._storage_path:
+            return
+        os.makedirs(os.path.dirname(self._storage_path), exist_ok=True)
+        # Atomic write via mkstemp + replace. A FIXED ".tmp" name races: two
+        # hook processes writing concurrently truncate each other's tmp file
+        # and the loser's os.replace() raises FileNotFoundError (its fd points
+        # at a renamed-away inode), crashing the hook.
+        fd, tmp_path = tempfile.mkstemp(
+            dir=os.path.dirname(self._storage_path) or ".",
+            prefix=".tmp_", suffix=".json",
+        )
+        try:
+            with os.fdopen(fd, "w") as f:
                 json.dump(self.to_dict(), f, indent=2)
             os.replace(tmp_path, self._storage_path)
+        finally:
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
 
     def _load(self) -> None:
         if not self._storage_path or not os.path.exists(self._storage_path):
