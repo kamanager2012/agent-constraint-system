@@ -401,33 +401,44 @@ def _check_asset_safety(command: str, ledger) -> Optional[dict]:
     Returns None only for UNTRACKED targets (so check_bash_with_context's L2.5
     can classify them). Tracked assets always return a decision dict — including
     ALLOW, so a tracked+verified asset is not re-classified by L2.5.
+
+    For mv, BOTH sides are checked: the SOURCE is a tracked critical asset
+    being relocated (moving a BLOCK-level asset must not silently bypass the
+    delete protection), and the DEST may be a tracked asset being overwritten.
     """
     import re as _re
 
     rm_match = _re.search(r"\brm\s+(?:-[a-zA-Z]*[rf][a-zA-Z]*\s+)?(\S+)", command)
-    mv_match = _re.search(r"\bmv\s+\S+\s+(\S+)", command)
+    # Two capture groups: source AND destination.
+    mv_match = _re.search(r"\bmv\s+(\S+)\s+(\S+)", command)
 
     is_rm = rm_match is not None
-    target_path = rm_match.group(1) if rm_match else (mv_match.group(1) if mv_match else None)
+    targets = []
+    if rm_match:
+        targets.append(rm_match.group(1))
+    elif mv_match:
+        targets.append(mv_match.group(1))  # source: asset being relocated
+        targets.append(mv_match.group(2))  # dest: asset being overwritten
 
-    if target_path is None:
-        return None
+    for target in targets:
+        if not ledger.is_tracked(target):
+            continue  # untracked side — keep checking / let L2.5 classify
 
-    if not ledger.is_tracked(target_path):
-        return None  # untracked → let L2.5 classify
+        decision = ledger.is_safe_to_delete(target)
+        if "BLOCK" in decision:
+            # rm of critical asset -> BLOCK; mv of critical asset (either
+            # side) -> CONFIRM — the asset survives, just relocated/overlaid.
+            if is_rm:
+                return {"decision": "BLOCK", "reason": "asset_ledger: {}".format(decision)}
+            return {"decision": "CONFIRM",
+                    "reason": "asset_ledger: mv_tracked_asset {}".format(decision.replace("BLOCK:", ":"))}
+        elif "CONFIRM" in decision:
+            return {"decision": "CONFIRM", "reason": "asset_ledger: {}".format(decision)}
 
-    decision = ledger.is_safe_to_delete(target_path)
-    if "BLOCK" in decision:
-        # rm of critical asset -> BLOCK, mv of critical asset -> CONFIRM
-        if is_rm:
-            return {"decision": "BLOCK", "reason": "asset_ledger: {}".format(decision)}
-        else:
-            return {"decision": "CONFIRM", "reason": "asset_ledger: {}".format(decision.replace("BLOCK:", "mv_tracked_asset:"))}
-    elif "CONFIRM" in decision:
-        return {"decision": "CONFIRM", "reason": "asset_ledger: {}".format(decision)}
+        # tracked + safe (authorized/verified) → ALLOW (do not fall through to L2.5)
+        return {"decision": "ALLOW", "reason": "asset_ledger: {}".format(decision)}
 
-    # tracked + safe (authorized/verified) → ALLOW (do not fall through to L2.5)
-    return {"decision": "ALLOW", "reason": "asset_ledger: {}".format(decision)}
+    return None  # no tracked target on either side
 
 
 def _check_capability_safety(command: str, capability_ledger) -> Optional[dict]:

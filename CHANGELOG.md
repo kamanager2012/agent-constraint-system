@@ -32,6 +32,19 @@ regressions are covered by new unit tests (`tests/test_violations.py`,
 - `is_safe_to_delete` is now a pure query (no more status mutation + full-file
   rewrite on every guard check, which amplified the race window).
 
+### Fixed — mv only checked the destination, not the source
+
+- `_check_asset_safety` extracted only the mv DEST, so a BLOCK-level asset
+  could be silently relocated to an untracked path (`mv /tmp/critical_data
+  /tmp/x` → ALLOW) — deleting it there later would only CONFIRM, bypassing
+  the delete protection. mv now checks BOTH sides: the source (asset being
+  relocated) and the dest (asset being overwritten). A tracked side returns
+  the ledger decision; BLOCK-level sides on mv are CONFIRM (the asset
+  survives, just moved/overlaid).
+- Regression tests in `tests/test_guard.py` (8): fragment-rm forms BLOCK,
+  quoted payloads stay ALLOW, rebuildable rm stays ALLOW, mv source/dest
+  decisions.
+
 ### Fixed — capability state machine allowed jumps
 
 - `track()` → `mark_removable()` reached `OLD_SECRET_REMOVABLE` with no
