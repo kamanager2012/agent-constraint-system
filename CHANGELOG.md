@@ -4,6 +4,69 @@
 > Versioning was normalized to SemVer starting with v1.5.0. See [docs/version-history.md](docs/version-history.md)
 > for the full mapping table.
 
+## v1.7.1 (2026-07-31) — Hardening round
+
+Five fixes from the post-v1.7.0 audit. Every fix was reproduced-then-verified;
+regressions are covered by new unit tests (`tests/test_violations.py`,
+`tests/test_ledgers.py`).
+
+### Fixed — recursive rm fragment-flag bypass (CRITICAL)
+
+- `rm -r'f' /`, `rm -r"f" /`, `rm -r$(echo f) /`, `rm -r\f /` — all exactly
+  `rm -rf /` to bash — fell through to `ALLOW` in `check_bash_with_context`:
+  the recursive-rm flag matched but the target extractor could not see past
+  the quote fragment.
+- `guard.py` gains `_shell_normalize` (strips quote / `$()` / backslash
+  layers); recursive-rm detection, target extraction, and the L1 pattern check
+  run on the normalized form. Verified: all fragment forms BLOCK; quoted
+  payloads (`echo 'rm -rf /'`) and legit rebuildable targets
+  (`rm -rf /tmp/build`) are unaffected.
+
+### Fixed — cross-process ledger writes lost entries
+
+- `asset_ledger.py` / `capability_ledger.py` now share the new
+  `ledger_base.KeyedJsonLedger`: mkstemp atomic writes, flock-guarded saves
+  that merge on-disk state, forward-tolerant loading (unknown JSON fields are
+  dropped), and a delete tombstone so `untrack` is not resurrected by the
+  merge. ~180 lines of mirrored persistence code removed.
+- `is_safe_to_delete` is now a pure query (no more status mutation + full-file
+  rewrite on every guard check, which amplified the race window).
+
+### Fixed — capability state machine allowed jumps
+
+- `track()` → `mark_removable()` reached `OLD_SECRET_REMOVABLE` with no
+  verification chain. The dead `_VALID_STATES` set is replaced by a ±1
+  `_TRANSITIONS` table enforced in `_advance`; jumps raise `ValueError`,
+  idempotent re-calls stay allowed.
+- `benchmarks/level4` cap-004 now walks the full configured → verified chain
+  (it previously skipped `mark_replacement_configured`).
+
+### Fixed — violation window math excluded the most common violation class
+
+- `window_score` capped at the last-10 events: 10 × WRITE(25) = 250 < threshold
+  300, so WRITE-class violations could never trigger a window lock. The window
+  now counts every event younger than `WINDOW_DECAY_SECONDS` plus all pinned
+  events (pinned can no longer be pushed out by volume).
+- `add_violation` reports `_persist_ok` when the event stream fails to persist.
+
+### Added — test suite wired into CI
+
+- New `pytest` job (previously zero jobs ran `tests/`); the only test file had
+  no asserts (`test_full_incident` was print-only). The E2E incident now
+  asserts BLOCK — with `origin=agent_write` the scenario could never reach
+  BLOCK by design, so it was corrected to `recovered_from_history`.
+- New unit tests: `tests/test_violations.py` (13 — window math, pinned
+  persistence, lock threshold, integrity chain tamper/compaction),
+  `tests/test_ledgers.py` (11 — state-machine jumps, cross-process merging,
+  forward-compat loading, pure-query decisions).
+
+### Verification
+
+- pytest: 26/26
+- benchmarks: L1 99/105 (baseline, no new failures) · L2 6/6 · L3 7/7 · L4 5/5
+
+---
+
 ## v1.7.0 (2026-07-30) — Capability Preservation
 
 Adds a Capability Ledger that blocks deletion / relocation of a depended-on

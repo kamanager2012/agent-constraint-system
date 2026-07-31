@@ -15,7 +15,6 @@ from typing import Any, Dict, List, Tuple
 
 # ── Constants ────────────────────────────────────────────────────────────────
 
-WINDOW_SIZE = 10
 WINDOW_DECAY_SECONDS = 3600  # 1 hour
 WINDOW_THRESHOLD = 300
 LOCK_DENY_SCORE = 1000
@@ -67,13 +66,20 @@ def save_violations(violations_file: Path, data: Dict[str, Any]) -> bool:
 
 
 def window_score(violations: Dict[str, Any]) -> int:
-    """Compute score within the sliding window."""
+    """Compute score within the sliding window.
+
+    Every event younger than WINDOW_DECAY_SECONDS counts (no fixed event-count
+    cap — with a 10-entry cap, 10 × WRITE(25) = 250 < WINDOW_THRESHOLD(300),
+    so the most common violation class could never trigger a window lock).
+    Pinned events count forever: they are the "never expires" marker and must
+    not be pushed out by newer events.
+    """
     events = violations.get("events", [])
     if not events:
         return 0
     now = time.time()
     total = 0
-    for e in events[-WINDOW_SIZE:]:
+    for e in events:
         if e.get("pinned", False):
             total += e.get("score", 0)
         elif now - e.get("ts", 0) < WINDOW_DECAY_SECONDS:
@@ -97,7 +103,15 @@ def add_violation(
     reason: str,
     score: int,
 ) -> Tuple[int, bool, Dict[str, Any]]:
-    """Add a violation event. Returns (new_window_score, is_locked, report)."""
+    """Add a violation event. Returns (new_window_score, is_locked, report).
+
+    The report dict carries a ``_persist_ok`` flag: if persisting the event
+    failed (disk full / permissions), the caller can see it — a lock decision
+    made on in-memory state alone would not survive a restart, and should not
+    look like a normal, durable record. The lock file is still written when
+    the threshold is crossed, because the process-local session is locked
+    either way.
+    """
     v = load_violations(violations_file)
     event = {
         "ts": time.time(),
@@ -106,7 +120,8 @@ def add_violation(
         "pinned": False,
     }
     v.setdefault("events", []).append(event)
-    save_violations(violations_file, v)
+    persist_ok = save_violations(violations_file, v)
+    v["_persist_ok"] = persist_ok
     ws = window_score(v)
     locked = ws >= WINDOW_THRESHOLD or score >= LOCK_DENY_SCORE
     if locked:

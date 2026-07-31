@@ -160,6 +160,29 @@ def clean_command(cmd: str) -> str:
     return result
 
 
+def _shell_normalize(cmd: str) -> str:
+    """Strip shell quoting/substitution/escape layers that fragment token
+    matching: 'x', "x", $'x', $(...), and backslash escapes.
+
+    To bash, `rm -r'f' /` is exactly `rm -rf /`. Used by
+    check_bash_with_context so recursive-rm detection, target extraction, and
+    pattern matching all see the same (normalized) structure — closing the
+    bypass where the recursive-rm flag matched but the target extractor could
+    not see past the quote fragment, and the command fell through to ALLOW.
+
+    Aggressive stripping is safe here because the normalized form is used
+    only for detection/extraction/pattern checks, never for evaluation of
+    quoted payloads (those stay opaque on purpose).
+    """
+    s = cmd
+    s = re.sub(r"\$\([^)]*\)", "", s)          # command substitution
+    s = re.sub(r"\$'[^']*'", "", s)            # ANSI-C quoting
+    s = re.sub(r"'[^']*'", "", s)              # single quotes
+    s = re.sub(r'"[^"\\]*(?:\\.[^"\\]*)*"', "", s)  # double quotes
+    s = re.sub(r"\\(.)", r"\1", s)             # backslash escapes
+    return s
+
+
 # -- Command splitting --
 
 def _split_commands(cmd: str) -> list[str]:
@@ -297,19 +320,27 @@ def check_bash_with_context(
     """
     from paths import is_forbidden_path, is_self_protect_path
 
-    is_recursive_rm = _RECURSIVE_RM_RE.search(command) is not None
+    # Shell-normalize first: to bash, `rm -r'f' /` IS `rm -rf /`. Detect
+    # recursive rm and extract targets on the normalized form so the
+    # fragment-flag bypass (recursive-rm flag matches but the target
+    # extractor can't see past the quote fragment → falls through to ALLOW)
+    # cannot slip through. Pattern matching also runs on the normalized form
+    # so quoted fragments can't hide a catastrophic target.
+    normalized = _shell_normalize(command)
+
+    is_recursive_rm = _RECURSIVE_RM_RE.search(normalized) is not None
 
     # L1: pattern matching. For recursive rm, skip the blanket block so
     # non-catastrophic targets reach the Asset Ledger; catastrophic-target
     # patterns (rm -rf /, ~, project/repo) and self-protect still BLOCK.
-    pattern_result = check_bash(command, _skip_blanket_rm=is_recursive_rm)
+    pattern_result = check_bash(normalized, _skip_blanket_rm=is_recursive_rm)
     if pattern_result:
         return {"decision": "BLOCK", "reason": pattern_result}
 
     # L1.5: paths-based catastrophic check for recursive rm targets that the
     # regex patterns above don't cover (e.g. rm -rf /etc, /usr, /boot).
     if is_recursive_rm:
-        m = _RM_TARGET_RE.search(command)
+        m = _RM_TARGET_RE.search(normalized)
         if m:
             target = m.group(1)
             root = is_forbidden_path(target)
@@ -339,7 +370,7 @@ def check_bash_with_context(
     # Ledger didn't decide (untracked), so classify by target:
     #   rebuildable/temp → ALLOW ; unknown → CONFIRM.
     if is_recursive_rm:
-        m = _RM_TARGET_RE.search(command)
+        m = _RM_TARGET_RE.search(normalized)
         if m:
             target = m.group(1)
             if _REBUILDABLE_RE.search(target):

@@ -73,8 +73,11 @@ def main():
     ))
 
     # cap-004: replacement verified but no smoke test yet -> CONFIRM
+    # (walk the full configured -> verified chain: the state machine now
+    # rejects jumps, so skipping mark_replacement_configured would raise)
     def setup_verified(l):
         l.track(".env", "OPENAI_API_KEY")
+        l.mark_replacement_configured(".env", "env:OPENAI_API_KEY")
         l.mark_replacement_verified(".env")
     scenarios.append(run_scenario(
         "cap-004",

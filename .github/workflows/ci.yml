@@ -17,6 +17,20 @@ jobs:
           echo "VERSION=$v_file  package.json=$v_pkg"
           test "$v_file" = "$v_pkg"
 
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install pytest
+        run: pip install pytest
+      - name: Run test suite
+        run: |
+          cd tests
+          python3 -m pytest . -q
+
   benchmark-level1:
     runs-on: ubuntu-latest
     steps:

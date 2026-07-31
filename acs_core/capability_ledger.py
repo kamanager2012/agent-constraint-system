@@ -1,11 +1,11 @@
 # acs_core/capability_ledger.py -- Capability Preservation Ledger
 #
 # Tracks hardcoded credentials the running code depends on, so an agent cannot
-# delete/clear/relocate them before a verified replacement is in place. Mirrors
-# AssetLedger (dataclass + atomic JSON persistence + tri-state decision) and
-# VerifiedCopyProtocol (verification gate).
+# delete/clear/relocate them before a verified replacement is in place.
+# Shares persistence machinery with AssetLedger via KeyedJsonLedger, and gates
+# its state machine like VerifiedCopyProtocol (verification gate).
 #
-# State machine:
+# State machine (strict, ±1 transitions only — see _TRANSITIONS):
 #   ACTIVE_HARDCODED_SECRET
 #       │  (replacement source configured, e.g. env var detected)
 #       ▼
@@ -20,17 +20,22 @@
 #       ▼
 #   OLD_SECRET_REMOVABLE   ──> delete/clear/relocate ALLOWed
 #
+# Transition rules:
+#   - A mark_* may only advance from the documented previous state (idempotent
+#     re-calls on the same state are allowed). Any jump (e.g. track() then
+#     mark_removable()) raises ValueError — a credential must never become
+#     removable without the full verification chain.
+#
 # Decision gate (removal_decision):
 #   ACTIVE_HARDCODED_SECRET / REPLACEMENT_CONFIGURED → BLOCK
 #   REPLACEMENT_VERIFIED                              → CONFIRM (no smoke test yet)
 #   DEPENDENT_WORKFLOW_PASSED / OLD_SECRET_REMOVABLE → ALLOW
 
-import json
-import os
 import time
-from pathlib import Path
 from typing import Dict, List, Optional
 from dataclasses import dataclass, field, asdict
+
+from ledger_base import KeyedJsonLedger
 
 
 @dataclass
@@ -50,17 +55,18 @@ class CapabilityEntry:
         return asdict(self)
 
 
-# Valid state transitions (enforced by the mark_* methods).
-_VALID_STATES = {
-    "ACTIVE_HARDCODED_SECRET",
-    "REPLACEMENT_CONFIGURED",
-    "REPLACEMENT_VERIFIED",
-    "DEPENDENT_WORKFLOW_PASSED",
-    "OLD_SECRET_REMOVABLE",
+# Documented ±1 transitions: target state -> its only legal previous state.
+# Enforcement lives in CapabilityLedger._advance; a state not listed here has
+# no reachable predecessor and can only be entered via the listed transition.
+_TRANSITIONS = {
+    "REPLACEMENT_CONFIGURED": "ACTIVE_HARDCODED_SECRET",
+    "REPLACEMENT_VERIFIED": "REPLACEMENT_CONFIGURED",
+    "DEPENDENT_WORKFLOW_PASSED": "REPLACEMENT_VERIFIED",
+    "OLD_SECRET_REMOVABLE": "DEPENDENT_WORKFLOW_PASSED",
 }
 
 
-class CapabilityLedger:
+class CapabilityLedger(KeyedJsonLedger[CapabilityEntry]):
     """Tracks hardcoded credentials so their removal is gated on a verified
     replacement, preventing silent runtime capability loss.
 
@@ -68,47 +74,55 @@ class CapabilityLedger:
         ledger = CapabilityLedger()
         ledger.track(".env", secret_id="OPENAI_API_KEY", dependents=["src/api.py"])
         ledger.removal_decision(".env")   # -> "BLOCK: credential_dependency_unsatisfied"
+        ledger.mark_replacement_configured(".env", "env:OPENAI_API_KEY")
+        ledger.mark_replacement_verified(".env")
+        ledger.mark_workflow_passed(".env", "pytest tests/test_api.py")
         ledger.mark_removable(".env")
         ledger.removal_decision(".env")   # -> "ALLOW: ..."
     """
 
-    def __init__(self, storage_path: Optional[str] = None):
-        self._caps: Dict[str, CapabilityEntry] = {}
-        self._storage_path = storage_path
-        if storage_path and os.path.exists(storage_path):
-            self._load()
+    _entry_type = CapabilityEntry
+
+    @property
+    def _caps(self) -> Dict[str, CapabilityEntry]:
+        """Back-compat alias: older code reads ledger._caps."""
+        return self._entries
 
     # -- Tracking --
 
     def track(self, path: str, secret_id: str, dependents: Optional[List[str]] = None) -> CapabilityEntry:
         """Register a hardcoded credential the code depends on."""
-        resolved = str(Path(path).resolve())
-        if resolved in self._caps:
-            entry = self._caps[resolved]
-            entry.updated_at = time.time()
-            return entry
-        entry = CapabilityEntry(
-            path=resolved,
+        return self._track(
+            path,
             secret_id=secret_id,
             dependents=list(dependents) if dependents else [],
         )
-        self._caps[resolved] = entry
-        self._save()
-        return entry
-
-    def untrack(self, path: str) -> None:
-        """Remove a credential from the ledger (after verified safe removal)."""
-        resolved = str(Path(path).resolve())
-        self._caps.pop(resolved, None)
-        self._save()
 
     # -- State machine transitions --
+
+    def _advance(self, path: str, target: str) -> CapabilityEntry:
+        """Advance an entry to ``target``, enforcing the ±1 transition table.
+
+        Raises ValueError on a state jump (e.g. track() then mark_removable()
+        without the verification chain in between). Re-calling the transition
+        that produced the current state is idempotent.
+        """
+        entry = self._require(path)
+        previous = _TRANSITIONS[target]
+        if entry.state not in (previous, target):
+            raise ValueError(
+                f"capability state jump: {entry.state} -> {target} "
+                f"(legal previous state: {previous}); "
+                "credentials are only removable after the full "
+                "configure -> verified -> workflow-passed chain"
+            )
+        entry.state = target
+        return entry
 
     def mark_replacement_configured(self, path: str, replacement_source: str) -> CapabilityEntry:
         """Replacement source configured (e.g. env var detected). Still BLOCK —
         replacement not yet proven to load/authenticate."""
-        entry = self._require(path)
-        entry.state = "REPLACEMENT_CONFIGURED"
+        entry = self._advance(path, "REPLACEMENT_CONFIGURED")
         entry.replacement_source = replacement_source
         entry.updated_at = time.time()
         self._save()
@@ -117,8 +131,7 @@ class CapabilityLedger:
     def mark_replacement_verified(self, path: str) -> CapabilityEntry:
         """Replacement credential loads + authenticates. Drops to CONFIRM — a
         dependent workflow smoke-test is still required before removal."""
-        entry = self._require(path)
-        entry.state = "REPLACEMENT_VERIFIED"
+        entry = self._advance(path, "REPLACEMENT_VERIFIED")
         entry.verified_at = time.time()
         entry.updated_at = time.time()
         self._save()
@@ -126,8 +139,7 @@ class CapabilityLedger:
 
     def mark_workflow_passed(self, path: str, smoke_test: str) -> CapabilityEntry:
         """A dependent workflow smoke-test passed using the new source."""
-        entry = self._require(path)
-        entry.state = "DEPENDENT_WORKFLOW_PASSED"
+        entry = self._advance(path, "DEPENDENT_WORKFLOW_PASSED")
         entry.smoke_test = smoke_test
         entry.updated_at = time.time()
         self._save()
@@ -135,20 +147,12 @@ class CapabilityLedger:
 
     def mark_removable(self, path: str) -> CapabilityEntry:
         """Old credential no longer referenced by any code path — safe to remove."""
-        entry = self._require(path)
-        entry.state = "OLD_SECRET_REMOVABLE"
+        entry = self._advance(path, "OLD_SECRET_REMOVABLE")
         entry.updated_at = time.time()
         self._save()
         return entry
 
     # -- Queries --
-
-    def get(self, path: str) -> Optional[CapabilityEntry]:
-        resolved = str(Path(path).resolve())
-        return self._caps.get(resolved)
-
-    def is_tracked(self, path: str) -> bool:
-        return self.get(path) is not None
 
     def removal_decision(self, path: str) -> str:
         """Check whether a depended-on credential may be removed.
@@ -168,42 +172,3 @@ class CapabilityLedger:
             return "CONFIRM: replacement_verified_pending_smoke_test"
         # DEPENDENT_WORKFLOW_PASSED or OLD_SECRET_REMOVABLE
         return "ALLOW: replacement_verified_workflow_passed"
-
-    # -- I/O --
-
-    def _require(self, path: str) -> CapabilityEntry:
-        resolved = str(Path(path).resolve())
-        entry = self._caps.get(resolved)
-        if entry is None:
-            raise KeyError(f"capability not tracked: {path}")
-        return entry
-
-    def _save(self) -> None:
-        if self._storage_path:
-            data = {k: v.to_dict() for k, v in self._caps.items()}
-            os.makedirs(os.path.dirname(self._storage_path) or ".", exist_ok=True)
-            # Atomic write: tmp file + rename prevents corruption from concurrent writers
-            tmp_path = self._storage_path + ".tmp"
-            with open(tmp_path, "w") as f:
-                json.dump(data, f, indent=2)
-            os.replace(tmp_path, self._storage_path)
-
-    def _load(self) -> None:
-        try:
-            with open(self._storage_path) as f:
-                data = json.load(f)
-            for k, v in data.items():
-                # Tolerate older entries missing new fields
-                v.setdefault("dependents", [])
-                v.setdefault("smoke_test", None)
-                v.setdefault("verified_at", None)
-                v.setdefault("replacement_source", None)
-                self._caps[k] = CapabilityEntry(**v)
-        except (json.JSONDecodeError, FileNotFoundError, TypeError):
-            pass
-
-    def clear(self) -> None:
-        """Clear all tracked credentials."""
-        self._caps.clear()
-        if self._storage_path and os.path.exists(self._storage_path):
-            os.remove(self._storage_path)

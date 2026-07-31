@@ -36,12 +36,12 @@ class E2ERunner:
         self.safe_mode = SafeMode(str(self.runtime_dir / "safe_mode.json"))
         self.results = []
 
-    def simulate_write(self, filepath):
+    def simulate_write(self, filepath, origin_hint="agent_write"):
         """Simulate agent writing a file (e.g., recovering from history)."""
         Path(filepath).parent.mkdir(parents=True, exist_ok=True)
         Path(filepath).write_text("recovered content")
         # Auto-track: agent wrote this file, mark origin
-        self.tracker.on_write(filepath, origin_hint="agent_write")
+        self.tracker.on_write(filepath, origin_hint=origin_hint)
 
     def simulate_move(self, source, dest):
         """Simulate agent moving a file."""
@@ -92,7 +92,7 @@ def test_full_incident():
         dramatics_dir = str(proj / "dramatools")
         Path(dramatics_dir).mkdir(parents=True, exist_ok=True)
         Path(dramatics_dir + "/important.py").write_text("recovered")
-        runner.tracker.on_write(dramatics_dir, origin_hint="agent_write")
+        runner.tracker.on_write(dramatics_dir, origin_hint="recovered_from_history")
         print("  [1] Agent wrote recovered data -> AssetTracker auto-tracked directory")
 
         # Step 2: Agent moves to /tmp (misdirected)
@@ -104,7 +104,7 @@ def test_full_incident():
 
         # Step 3: Agent makes two errors (misunderstands user)
         runner.simulate_error("agent misidentified file location")
-        runner.simulate_error("agent misinterpreted user question")  
+        runner.simulate_error("agent misinterpreted user question")
 
         # Step 4: Agent attempts rm -rf
         result = runner.simulate_bash(
@@ -119,7 +119,8 @@ def test_full_incident():
 
     passed = all(r["pass"] for r in runner.results)
     print(f"\n  Result: {'PASS' if passed else 'FAIL'}")
-    return passed
+    assert passed, f"E2E incident scenario failed: {[r for r in runner.results if not r['pass']]}"
+    return passed  # main() relies on this; pytest only warns about the bool
 
 
 def test_safemode_persistence():

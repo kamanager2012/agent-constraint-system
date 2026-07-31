@@ -13,13 +13,16 @@
 #   HIGH      -- moved asset, unverified -> CONFIRM delete
 #   MEDIUM    -- tracked but authorized -> ALLOW with audit
 #   LOW       -- untracked temp -> ALLOW
+#
+# Persistence is inherited from KeyedJsonLedger (atomic + flock-guarded save,
+# forward-tolerant load).
 
-import json
-import os
 import time
-from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 from dataclasses import dataclass, field, asdict
+from pathlib import Path
+
+from ledger_base import KeyedJsonLedger
 
 
 @dataclass
@@ -41,7 +44,7 @@ class AssetEntry:
         return asdict(self)
 
 
-class AssetLedger:
+class AssetLedger(KeyedJsonLedger[AssetEntry]):
     """Tracks asset provenance and lifecycle for context-aware safety decisions.
 
     Usage:
@@ -52,31 +55,18 @@ class AssetLedger:
         ledger.is_safe_to_delete("/tmp/dramatools")  # -> "BLOCK: critical_asset_no_copy"
     """
 
-    def __init__(self, storage_path: Optional[str] = None):
-        self._assets: Dict[str, AssetEntry] = {}
-        self._storage_path = storage_path
-        if storage_path and os.path.exists(storage_path):
-            self._load()
+    _entry_type = AssetEntry
+
+    @property
+    def _assets(self) -> Dict[str, AssetEntry]:
+        """Back-compat alias: older code (tests, adapters) reads ledger._assets."""
+        return self._entries
 
     # -- Tracking --
 
     def track(self, path: str, origin: str = "unknown") -> AssetEntry:
         """Register a path in the ledger."""
-        resolved = str(Path(path).resolve())
-        if resolved in self._assets:
-            entry = self._assets[resolved]
-            entry.updated_at = time.time()
-            return entry
-        entry = AssetEntry(path=resolved, origin=origin, status="RECOVERED")
-        self._assets[resolved] = entry
-        self._save()
-        return entry
-
-    def untrack(self, path: str) -> None:
-        """Remove a path from the ledger (after verified safe deletion)."""
-        resolved = str(Path(path).resolve())
-        self._assets.pop(resolved, None)
-        self._save()
+        return self._track(path, origin=origin, status="RECOVERED")
 
     # -- Movement --
 
@@ -138,17 +128,8 @@ class AssetLedger:
 
     # -- Safety checks --
 
-    def get(self, path: str) -> Optional[AssetEntry]:
-        """Get the ledger entry for a path, or None if untracked."""
-        resolved = str(Path(path).resolve())
-        return self._assets.get(resolved)
-
-    def is_tracked(self, path: str) -> bool:
-        """Check if a path is in the ledger."""
-        return self.get(path) is not None
-
     def is_safe_to_delete(self, path: str) -> str:
-        """Check if it's safe to delete this path.
+        """Check if it's safe to delete this path. Pure query — no writes.
 
         Returns one of:
             "ALLOW"     -- safe to delete (untracked temp, or authorized + verified)
@@ -163,10 +144,7 @@ class AssetLedger:
 
         # Explicitly authorized + verified copy exists: safe
         if entry.delete_authorized and entry.verified_copy:
-            entry.status = "SAFE_TO_DELETE"
-            entry.updated_at = time.time()
-            self._save()
-            return "ALLOW"
+            return "ALLOW: authorized_verified"
 
         # Authorized but no verified copy: confirm
         if entry.delete_authorized and not entry.verified_copy:
@@ -208,36 +186,11 @@ class AssetLedger:
     # -- I/O --
 
     def _get_or_create(self, resolved: str) -> AssetEntry:
-        if resolved in self._assets:
-            return self._assets[resolved]
+        if resolved in self._entries:
+            return self._entries[resolved]
         entry = AssetEntry(path=resolved)
-        self._assets[resolved] = entry
+        self._entries[resolved] = entry
         return entry
-
-    def _save(self) -> None:
-        if self._storage_path:
-            data = {k: v.to_dict() for k, v in self._assets.items()}
-            os.makedirs(os.path.dirname(self._storage_path), exist_ok=True)
-            # Atomic write: tmp file + rename prevents corruption from concurrent writers
-            tmp_path = self._storage_path + ".tmp"
-            with open(tmp_path, 'w') as f:
-                json.dump(data, f, indent=2)
-            os.replace(tmp_path, self._storage_path)
-
-    def _load(self) -> None:
-        try:
-            with open(self._storage_path) as f:
-                data = json.load(f)
-            for k, v in data.items():
-                self._assets[k] = AssetEntry(**v)
-        except (json.JSONDecodeError, FileNotFoundError):
-            pass
-
-    def clear(self) -> None:
-        """Clear all ledger entries."""
-        self._assets.clear()
-        if self._storage_path and os.path.exists(self._storage_path):
-            os.remove(self._storage_path)
 
 
 class AssetTracker:
@@ -292,4 +245,3 @@ class AssetTracker:
     def on_read(self, path: str) -> None:
         """Mark path as potentially interesting (doesn't track yet)."""
         pass  # Read events don't create entries, but could trigger heuristic tracking
-
