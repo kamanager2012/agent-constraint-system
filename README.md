@@ -8,6 +8,8 @@ ACS is the runtime safety layer that answers that question: a cross-agent
 constraint system that intercepts tool calls at the execution boundary,
 enforces policy, and keeps a tamper-evident record of every decision.
 
+Project overview: [Kama Projects](https://kamanager2012.github.io/).
+
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-green.svg)](https://python.org)
 [![Version](https://img.shields.io/badge/version-1.7.1-blue.svg)](CHANGELOG.md)
